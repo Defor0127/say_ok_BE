@@ -117,7 +117,7 @@ export class Users {
   @OneToMany(() => ChatRoomUser, (cu) => cu.user)
   chatRooms: ChatRoomUser[];
 
-  @OneToMany(() => Club, (club) => club)
+  @OneToMany(() => Club, (club) => club.user)
   clubs: Club[];
 
   @OneToMany(() => UserSuspension, (suspension) => suspension.user)
