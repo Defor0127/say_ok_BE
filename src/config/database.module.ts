@@ -7,7 +7,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const isDev = configService.get('NODE_ENV') === 'development';
+        const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+        const isDev = nodeEnv === 'development';
+        const useSsl = !isDev;
 
         return {
           type: 'mariadb',
@@ -18,6 +20,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           database: configService.get<string>('DB_NAME', ''),
           entities: [__dirname + '/../**/*.entity{.ts,.js}'],
           migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+
           synchronize: isDev,
           logging: isDev,
           charset: 'utf8mb4',
@@ -25,13 +28,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           retryAttempts: 10,
           retryDelay: 3000,
 
-          extra: {
-            ssl: { rejectUnauthorized: false },
-          },
+          ...(useSsl
+            ? {
+              ssl: true,
+              extra: {
+                ssl: { rejectUnauthorized: false },
+              },
+            }
+            : {}),
         };
       },
       inject: [ConfigService],
     }),
   ],
 })
-export class DatabaseModule {}
+export class DatabaseModule { }

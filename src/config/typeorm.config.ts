@@ -5,7 +5,11 @@ import { config } from 'dotenv';
 config();
 const configService = new ConfigService();
 
-const isDev = configService.get('NODE_ENV') === 'development';
+const NODE_ENV = configService.get<string>('NODE_ENV', 'development');
+const isDev = NODE_ENV === 'development';
+
+// 배포(운영)에서만 SSL 사용 (Aiven 등)
+const useSsl = !isDev;
 
 export const typeOrmConfig: DataSourceOptions = {
   type: 'mariadb',
@@ -16,13 +20,18 @@ export const typeOrmConfig: DataSourceOptions = {
   database: configService.get<string>('DB_NAME', ''),
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+
   synchronize: isDev,
   logging: isDev,
   charset: 'utf8mb4',
-
-  extra: {
-    ssl: { rejectUnauthorized: false },
-  },
+  ...(useSsl
+    ? {
+      ssl: true,
+      extra: {
+        ssl: { rejectUnauthorized: false },
+      },
+    }
+    : {}),
 };
 
 export default new DataSource(typeOrmConfig);
