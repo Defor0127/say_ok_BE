@@ -1,37 +1,32 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
-import { config } from 'dotenv';
+import { DataSource } from 'typeorm';
+import * as dotenv from 'dotenv';
 
-config();
-const configService = new ConfigService();
+dotenv.config();
 
-const NODE_ENV = configService.get<string>('NODE_ENV', 'development');
-const isDev = NODE_ENV === 'development';
+const isProd = process.env.NODE_ENV === 'production';
 
-// 배포(운영)에서만 SSL 사용 (Aiven 등)
-const useSsl = !isDev;
-
-export const typeOrmConfig: DataSourceOptions = {
+export default new DataSource({
   type: 'mariadb',
-  host: configService.get<string>('DB_HOST', 'localhost'),
-  port: Number(configService.get<string>('DB_PORT', '3306')),
-  username: configService.get<string>('DB_USERNAME', 'root'),
-  password: configService.get<string>('DB_PASSWORD', ''),
-  database: configService.get<string>('DB_NAME', ''),
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 
-  synchronize: isDev,
-  logging: isDev,
+  synchronize: false,
+  logging: true,
+
+  entities: [
+    isProd
+      ? 'dist/**/*.entity.{js}'
+      : 'src/**/*.entity.{ts}',
+  ],
+
+  migrations: [
+    isProd
+      ? 'dist/migrations/*.{js}'
+      : 'src/migrations/*.{ts}',
+  ],
+
   charset: 'utf8mb4',
-  ...(useSsl
-    ? {
-      ssl: true,
-      extra: {
-        ssl: { rejectUnauthorized: false },
-      },
-    }
-    : {}),
-};
-
-export default new DataSource(typeOrmConfig);
+});
