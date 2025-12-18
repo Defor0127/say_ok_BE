@@ -20,13 +20,14 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli",
     "migration:generate": "npm run typeorm -- migration:generate -d src/config/typeorm.config.ts",
+    "migration:generate:railway": "npm run typeorm -- migration:generate -d src/config/typeorm.migration.config.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/config/typeorm.config.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/config/typeorm.config.ts",
     "typeorm:prod": "node ./node_modules/typeorm/cli.js",
-    "migration:run:prod": "NODE_ENV=production npm run typeorm:prod -- migration:run -d dist/config/typeorm.config.js",
-    "migration:revert:prod": "NODE_ENV=production npm run typeorm:prod -- migration:revert -d dist/config/typeorm.config.js",
-    "schema:sync:prod": "NODE_ENV=production npm run typeorm:prod -- schema:sync -d dist/config/typeorm.config.js",
-    "schema:log:prod": "NODE_ENV=production npm run typeorm:prod -- schema:log -d dist/config/typeorm.config.js",
+    "migration:run:prod": "cross-env NODE_ENV=production npm run typeorm:prod -- migration:run -d dist/config/typeorm.config.js",
+    "migration:revert:prod": "cross-env NODE_ENV=production npm run typeorm:prod -- migration:revert -d dist/config/typeorm.config.js",
+    "schema:sync:prod": "cross-env NODE_ENV=production npm run typeorm:prod -- schema:sync -d dist/config/typeorm.config.js",
+    "schema:log:prod": "cross-env NODE_ENV=production npm run typeorm:prod -- schema:log -d dist/config/typeorm.config.js",
     "deploy:railway": "npm run build && npm run migration:run:prod",
     "start:railway": "npm run migration:run:prod && npm run start:prod"
   },
@@ -82,7 +83,8 @@
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "cross-env": "^7.0.3"
   },
   "jest": {
     "moduleFileExtensions": [

@@ -1,6 +1,9 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import * as dotenv from 'dotenv';
+import { join } from 'path';
 
+// 마이그레이션 생성을 위한 별도 설정
+// Railway/Aiven DB 환경 변수를 사용하여 마이그레이션 생성
 dotenv.config();
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -15,34 +18,24 @@ const baseConfig: DataSourceOptions = {
   database: process.env.DB_NAME,
 
   /**
-   * ⚠️ 운영에서는 절대 true 유지 X
-   * 초기 1회 스키마 생성 후 반드시 false
+   * 마이그레이션 생성 시에는 synchronize를 false로 유지
    */
-  synchronize: !isProd,
+  synchronize: false,
 
   /**
-   * 운영 문제 파악용 (필요 없으면 줄여도 됨)
+   * 마이그레이션 생성 시 상세 로깅 활성화
    */
-  logging: isProd ? ['error'] : true,
+  logging: ['error', 'warn', 'schema'],
 
   /**
-   * 🔥 가장 중요한 부분
-   * prod / dev 모두 안정적으로 엔티티 인식
+   * 엔티티 경로 - 개발 환경 기준 (마이그레이션 생성은 로컬에서)
    */
-  entities: [
-    isProd
-      ? 'dist/**/*.entity.js'
-      : 'src/**/*.entity.ts',
-  ],
+  entities: [join(__dirname, '../**/*.entity.ts')],
 
   /**
-   * migration 경로도 단순하게
+   * 마이그레이션 경로
    */
-  migrations: [
-    isProd
-      ? 'dist/migrations/*.js'
-      : 'src/migrations/*.ts',
-  ],
+  migrations: [join(__dirname, '../migrations/*.ts')],
 
   migrationsTableName: 'migrations',
   migrationsRun: false,
@@ -61,3 +54,4 @@ if (dbSsl) {
 }
 
 export default new DataSource(baseConfig);
+
