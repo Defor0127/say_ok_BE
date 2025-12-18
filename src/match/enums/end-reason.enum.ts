@@ -1,0 +1,7 @@
+export enum EndReason {
+  USER_LEFT = 'USER_LEFT',
+  TIMEOUT = 'TIMEOUT',
+  BLOCKED = 'BLOCKED',
+  REPORTED = 'REPORTED',
+  ERROR = 'ERROR',
+}

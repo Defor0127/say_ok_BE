@@ -1,0 +1,7 @@
+export enum CallStatus {
+  RINGING = 'RINGING',
+  ONGOING = 'ONGOING',
+  DECLINED = 'DECLINED',
+  ENDED = 'ENDED',
+  TIMEOUT = 'TIMEOUT',
+}
