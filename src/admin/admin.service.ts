@@ -11,6 +11,8 @@ import { ChatRoom } from '@/chat/entities/chatroom.entity';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
 import { ClubChatRoom } from '@/club/entities/club-chat-room.entity';
 import { ClubChatRoomMember } from '@/club/entities/club-chat-room-member.entity';
+import { SeniorContent } from '@/hub/entities/senior-content.entity';
+import { UpdateHubContentDto } from '@/hub/dto/update-hub-content.dto';
 
 @Injectable()
 export class AdminService {
@@ -31,6 +33,8 @@ export class AdminService {
     private readonly chatRoomRepository: Repository<ChatRoom>,
     @InjectRepository(ClubChatRoom)
     private readonly clubChatRoomRepository: Repository<ClubChatRoom>,
+    @InjectRepository(SeniorContent)
+    private readonly seniorContentRepository: Repository<SeniorContent>,
     private readonly entityLookupService: EntityLookupService
   ) { }
 
@@ -260,5 +264,32 @@ export class AdminService {
       },
       message: "대상 유저의 포인트 사용 이력을 조회합니다."
     }
+  }
+
+  async updateHubContent(contentId: number, updateHubContentDto: UpdateHubContentDto) {
+    const contentExist = await this.entityLookupService.findOneOrThrow(
+      this.seniorContentRepository,
+      { id: contentId },
+      "대상 콘텐츠가 존재하지 않습니다."
+    )
+    Object.assign(contentExist, updateHubContentDto)
+    const saved = await this.seniorContentRepository.save(contentExist)
+    return {
+      data: saved,
+      message: "허브 콘텐츠 수정에 성공했습니다."
+    }
+  }
+
+  async deleteHubContent(contentId: number) {
+    const contentExist = await this.entityLookupService.findOneOrThrow(
+      this.seniorContentRepository,
+      { id: contentId },
+      "대상 콘텐츠가 존재하지 않습니다."
+    )
+    const deleteResult = await this.seniorContentRepository.delete({ id: contentId })
+    if (!deleteResult || deleteResult.affected === 0) {
+      throw new NotFoundException("대상 콘텐츠가 존재하지 않습니다.")
+    }
+    return { message: "콘텐츠 삭제에 성공했습니다." }
   }
 }

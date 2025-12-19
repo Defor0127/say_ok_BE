@@ -3,10 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { SeniorContent } from './entities/senior-content.entity';
 import { CreateHubContentDto } from './dto/create-hub-content.dto';
-import { UpdateHubContentDto } from './dto/update-hub-content.dto';
 import { Category } from '@/category/entities/category.entity';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
-import { Role } from '@/user/enum/role.enum';
 
 @Injectable()
 
@@ -86,32 +84,5 @@ export class HubService {
       data: contents,
       message: contents.length === 0 ? "검색 결과가 없습니다." : "검색 결과를 반환합니다."
     }
-  }
-
-  async updateHubContent( contentId: number, updateHubContentDto: UpdateHubContentDto) {
-    const contentExist = await this.entityLookupService.findOneOrThrow(
-      this.seniorContentRepository,
-      { id: contentId },
-      "대상 콘텐츠가 존재하지 않습니다."
-    )
-    Object.assign(contentExist, updateHubContentDto)
-    const saved = await this.seniorContentRepository.save(contentExist)
-    return {
-      data: saved,
-      message: "허브 콘텐츠 수정에 성공했습니다."
-    }
-  }
-
-  async deleteHubContent( contentId: number) {
-    const contentExist = await this.entityLookupService.findOneOrThrow(
-      this.seniorContentRepository,
-      { id: contentId },
-      "대상 콘텐츠가 존재하지 않습니다."
-    )
-    const deleteResult = await this.seniorContentRepository.delete({ id: contentId })
-    if (!deleteResult || deleteResult.affected === 0) {
-      throw new NotFoundException("대상 콘텐츠가 존재하지 않습니다.")
-    }
-    return { message: "콘텐츠 삭제에 성공했습니다." }
   }
 }

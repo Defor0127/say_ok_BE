@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Role } from '@/user/enum/role.enum';
+import { UpdateHubContentDto } from '@/hub/dto/update-hub-content.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('관리자')
@@ -144,5 +145,37 @@ export class AdminController {
     @Body() settingsDto: any
   ) {
     return this.adminService.updateSystemSettings(settingsDto)
+  }
+
+  @Patch('/hub/:contentId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: '허브 콘텐츠 수정', description: '허브 콘텐츠를 수정합니다. (ADMIN만 접근 가능)' })
+  @ApiParam({ name: 'contentId', description: '콘텐츠 ID' })
+  @ApiBody({ type: UpdateHubContentDto })
+  @ApiResponse({ status: 200, description: '콘텐츠 수정 성공' })
+  @ApiResponse({ status: 401, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: '콘텐츠를 찾을 수 없음' })
+  async updateHubContent(
+    @Param('contentId') contentId: number,
+    @Body() updateHubContentDto: UpdateHubContentDto
+  ) {
+    return this.adminService.updateHubContent(contentId, updateHubContentDto)
+  }
+
+  @Delete('/hub/:contentId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: '허브 콘텐츠 삭제', description: '허브 콘텐츠를 삭제합니다. (ADMIN만 접근 가능)' })
+  @ApiParam({ name: 'contentId', description: '콘텐츠 ID' })
+  @ApiResponse({ status: 200, description: '콘텐츠 삭제 성공' })
+  @ApiResponse({ status: 401, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: '콘텐츠를 찾을 수 없음' })
+  async deleteHubContent(
+    @Param('contentId') contentId: number
+  ) {
+    return this.adminService.deleteHubContent(contentId)
   }
 }
