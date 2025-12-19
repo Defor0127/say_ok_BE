@@ -119,89 +119,76 @@ export class ClubService {
     }
   }
 
-  //ADMIN이랑 일반 유저가 호출했을 때 차이가 있음.
+  //ADMIN이랑 일반 유저가 호출했을 때 차이가 있음. admin은 전체 지역 모임 정보, 일반 유저는 자기 지역 주변
   async getClubs(region: string, role: string) {
-    try {
-      if (role === 'ADMIN') {
-        const clubs = await this.clubRepository.find({
-          relations: ['members', 'schedules', 'chatRooms', 'bannedMembers']
-        })
-        return {
-          message: "전체 모임 정보를 반환합니다.",
-          data: clubs
-        }
-      }
+    if (role === 'ADMIN') {
       const clubs = await this.clubRepository.find({
-        where: { region: region, status: 'ACTIVE' },
-        select: ['clubName', 'categoryId', 'leaderId']
+        relations: ['members', 'schedules', 'chatRooms', 'bannedMembers']
       })
-      if (clubs.length === 0) {
-        return {
-          message: "생성된 모임이 없습니다.",
-          data: []
-        }
-      }
       return {
-        message: "주변 모임 정보를 반환합니다.",
-        data: {
-          region: region,
-          clubs: clubs
-        }
+        message: "전체 모임 정보를 반환합니다.",
+        data: clubs
       }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    }
+    const clubs = await this.clubRepository.find({
+      where: { region: region, status: 'ACTIVE' },
+      select: ['clubName', 'categoryId', 'leaderId']
+    })
+    if (clubs.length === 0) {
+      return {
+        message: "생성된 모임이 없습니다.",
+        data: []
+      }
+    }
+    return {
+      message: "주변 모임 정보를 반환합니다.",
+      data: {
+        region: region,
+        clubs: clubs
+      }
     }
   }
 
   async getClub(clubId: number) {
-    try {
-      const clubExist = await this.clubRepository.findOne({
-        where: { id: clubId, status: 'ACTIVE' },
-        relations: ['schedules', 'members', 'leader']
-      })
-      if (!clubExist) {
-        throw new NotFoundException("대상 모임이 존재하지 않습니다.")
+    const clubExist = await this.clubRepository.findOne({
+      where: { id: clubId, status: 'ACTIVE' },
+      relations: ['schedules', 'members', 'leader']
+    })
+    if (!clubExist) {
+      throw new NotFoundException("대상 모임이 존재하지 않습니다.")
+    }
+    return {
+      message: "대상 모임의 정보를 반환합니다.",
+      data: {
+        clubName: clubExist.clubName,
+        introduction: clubExist.introduction,
+        region: clubExist.region,
+        memberCount: clubExist.members.length,
+        leader: clubExist.leader.nickname,
+        schedules: clubExist.schedules,
+        members: clubExist.members
       }
-      return {
-        message: "대상 모임의 정보를 반환합니다.",
-        data: {
-          clubName: clubExist.clubName,
-          introduction: clubExist.introduction,
-          region: clubExist.region,
-          memberCount: clubExist.members.length,
-          leader: clubExist.leader.nickname,
-          schedules: clubExist.schedules,
-          members: clubExist.members
-        }
-      }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
     }
   }
 
   async updateClub(loginEmail: string, clubId: number, updateClubDto: UpdateClubDto) {
-    try {
-      const clubExist = await this.clubRepository.findOne({
-        where: { id: clubId },
-        relations: ['leader']
-      })
-      if (!clubExist) {
-        throw new NotFoundException("대상 모임이 존재하지 않습니다.")
-      }
-      if (clubExist.leader.loginEmail !== loginEmail) {
-        throw new ForbiddenException("대상 모임에 대한 수정 권한이 없습니다.")
-      }
-      Object.assign(clubExist, updateClubDto)
-      const saved = await this.clubRepository.save(clubExist);
-      return {
-        message: "대상 모임 정보 수정에 성공했습니다.",
-        data: saved.clubName
-      }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    const clubExist = await this.clubRepository.findOne({
+      where: { id: clubId },
+      relations: ['leader']
+    })
+    if (!clubExist) {
+      throw new NotFoundException("대상 모임이 존재하지 않습니다.")
+    }
+    if (clubExist.leader.loginEmail !== loginEmail) {
+      throw new ForbiddenException("대상 모임에 대한 수정 권한이 없습니다.")
+    }
+    Object.assign(clubExist, updateClubDto)
+    const saved = await this.clubRepository.save(clubExist);
+    return {
+      message: "대상 모임 정보 수정에 성공했습니다.",
+      data: saved.clubName
     }
   }
-
   async getClubStatus(clubId: number) {
     const clubExist = await this.entityLookupService.findOneOrThrow(
       this.clubRepository,
@@ -249,7 +236,7 @@ export class ClubService {
     }
   }
 
-  // 유저 region 받아서
+  // 유저 region 받아서 카테고리별로
   async getClubsByCategory(region: string, categoryId: number) {
     const clubsByCategory = await this.clubRepository.createQueryBuilder('club')
       .leftJoin('club.category', 'category')
@@ -420,29 +407,25 @@ export class ClubService {
   }
 
   async getOperatingClubsByMe(userId: number) {
-    try {
-      const userExist = await this.entityLookupService.findOneOrThrow(
-        this.userRepository,
-        { id: userId },
-        "대상 유저가 존재하지 않습니다."
-      )
-      const operatingClubs = await this.clubRepository.find({
-        select: ['clubName', 'category', 'region', 'introduction', 'joinMode'],
-        where: { leaderId: userId },
-        relations: ['category']
-      })
-      if (operatingClubs.length === 0) {
-        return {
-          message: "운영중인 모임이 없습니다.",
-          data: []
-        }
-      }
+    const userExist = await this.entityLookupService.findOneOrThrow(
+      this.userRepository,
+      { id: userId },
+      "대상 유저가 존재하지 않습니다."
+    )
+    const operatingClubs = await this.clubRepository.find({
+      select: ['clubName', 'category', 'region', 'introduction', 'joinMode', 'status'],
+      where: { leaderId: userId },
+      relations: ['category']
+    })
+    if (operatingClubs.length === 0) {
       return {
-        message: `${operatingClubs.length}개의 모임을 조회하였습니다.`,
-        data: operatingClubs
+        message: "운영중인 모임이 없습니다.",
+        data: []
       }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    }
+    return {
+      message: `${operatingClubs.length}개의 모임을 조회하였습니다.`,
+      data: operatingClubs
     }
   }
 
@@ -507,28 +490,24 @@ export class ClubService {
   }
 
   async getBanMembersByClub(clubId: number) {
-    try {
-      const targetMembers = await this.clubBanMemberRepository.find({
-        select: ['banUserId'],
-        where: { clubId },
-      })
-      if (targetMembers.length === 0) {
-        return {
-          message: "대상 클럽에 추방 유저가 존재하지 않습니다.",
-          data: []
-        }
-      }
-      const memberIds = targetMembers.map(({ banUserId }) => banUserId)
-      const membersDetail = await this.userRepository.find({
-        select: ['id', 'loginEmail', 'nickname'],
-        where: { id: In(memberIds) }
-      })
+    const targetMembers = await this.clubBanMemberRepository.find({
+      select: ['banUserId'],
+      where: { clubId },
+    })
+    if (targetMembers.length === 0) {
       return {
-        message: "대상 모임의 추방된 유저 목록을 반환합니다.",
-        data: membersDetail
+        message: "대상 클럽에 추방 유저가 존재하지 않습니다.",
+        data: []
       }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    }
+    const memberIds = targetMembers.map(({ banUserId }) => banUserId)
+    const membersDetail = await this.userRepository.find({
+      select: ['id', 'loginEmail', 'nickname'],
+      where: { id: In(memberIds) }
+    })
+    return {
+      message: "대상 모임의 추방된 유저 목록을 반환합니다.",
+      data: membersDetail
     }
   }
 
