@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Users } from '@/user/entities/user.entity';
@@ -164,7 +164,7 @@ export class AdminService {
       "대상 모임이 존재하지 않습니다."
     )
     if (clubExist.status !== 'AWAITING') {
-      throw new InternalServerErrorException("승인 대기 상태의 모임만 승인할 수 있습니다.")
+      throw new ConflictException("승인 대기 상태의 모임만 승인할 수 있습니다.")
     }
     const updateResult = await this.clubRepository.update(
       { id: clubId },
@@ -186,6 +186,9 @@ export class AdminService {
       { id: clubId },
       "대상 모임이 존재하지 않습니다."
     )
+    if (clubExist.status !== 'AWAITING') {
+      throw new ConflictException("승인 대기 상태의 모임만 승인 거절할 수 있습니다.")
+    }
     const updateResult = await this.clubRepository.update(
       { id: clubId },
       { status: 'DELETED' }
@@ -258,5 +261,4 @@ export class AdminService {
       message: "대상 유저의 포인트 사용 이력을 조회합니다."
     }
   }
-
 }

@@ -87,7 +87,7 @@ export class AdminController {
     return this.adminService.getAllClubs(page, limit, categoryId, status)
   }
 
-  @Post('/club/:clubId/approve')
+  @Post('/club/approve/:clubId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth('JWT-auth')
@@ -103,7 +103,7 @@ export class AdminController {
     return this.adminService.approveClub(clubId)
   }
 
-  @Post('/club/:clubId/reject')
+  @Post('/club/reject/:clubId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth('JWT-auth')
@@ -145,5 +145,4 @@ export class AdminController {
   ) {
     return this.adminService.updateSystemSettings(settingsDto)
   }
-
 }
