@@ -509,11 +509,9 @@ export class ClubService {
     const queryRunner = this.datasource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       const clubRepo = queryRunner.manager.getRepository(Club);
       const clubMemberRepo = queryRunner.manager.getRepository(ClubMember);
-
       const clubExist = await clubRepo.findOne({
         where: { id: clubId }
       })
@@ -526,19 +524,19 @@ export class ClubService {
         throw new BadRequestException("다른 지역의 모임에 가입할 수 없습니다.")
       }
       const memberExist = await clubMemberRepo.findOne({
-        where: { clubId: clubId, userId: userId }
+        where: { clubId, userId }
       })
       if (memberExist) {
         await queryRunner.rollbackTransaction();
         throw new ConflictException("이미 대상 모임에 가입된 유저입니다.")
       }
-      if(clubExist.status !== 'ACTIVE' ){
+      if (clubExist.status !== 'ACTIVE') {
         await queryRunner.rollbackTransaction();
         throw new ForbiddenException("활성 상태의 모임이 아닙니다.")
       }
       if (clubExist.joinMode === 'AUTO') {
         const memberToCreate = clubMemberRepo.create({
-          clubId: clubId, userId: userId, status: 'JOIN'
+          clubId, userId, status: 'JOIN'
         })
         const saved = await clubMemberRepo.save(memberToCreate);
         await queryRunner.commitTransaction();
@@ -548,7 +546,7 @@ export class ClubService {
         }
       }
       const memberToCreate = clubMemberRepo.create({
-        clubId: clubId, userId: userId, status: 'WAIT'
+        clubId, userId, status: 'WAIT'
       })
       const saved = await clubMemberRepo.save(memberToCreate);
       await queryRunner.commitTransaction();
@@ -568,114 +566,104 @@ export class ClubService {
   }
 
   async leaveClub(clubId: number, userId: number) {
-    try {
-      const clubExist = await this.entityLookupService.findOneOrThrow(
-        this.clubRepository,
-        { id: clubId },
-        "대상 모임이 존재하지 않습니다."
-      )
-      const memberExist = await this.entityLookupService.findOneOrThrow(
-        this.clubMemberRepository,
-        { userId, clubId },
-        "대상 모임에 가입중인 멤버가 아닙니다."
-      )
-      if (userId === clubExist.leaderId) {
-        throw new ForbiddenException("모임의 운영자는 모임을 탈퇴할 수 없습니다.")
+    const clubExist = await this.entityLookupService.findOneOrThrow(
+      this.clubRepository,
+      { id: clubId },
+      "대상 모임이 존재하지 않습니다."
+    )
+    const memberExist = await this.entityLookupService.findOneOrThrow(
+      this.clubMemberRepository,
+      { userId, clubId },
+      "대상 모임에 가입중인 멤버가 아닙니다."
+    )
+    if (userId === clubExist.leaderId) {
+      throw new ForbiddenException("모임의 운영자는 모임을 탈퇴할 수 없습니다.")
+    }
+    if (memberExist.status === 'WAIT') {
+      const deleteResult = await this.clubMemberRepository.delete({
+        userId, clubId
+      })
+      if (!deleteResult || deleteResult.affected === 0) {
+        throw new InternalServerErrorException("모임 가입 신청 취소에 실패했습니다.")
       }
-      if (memberExist.status === 'WAIT') {
-        const deleteResult = await this.clubMemberRepository.delete({
-          userId, clubId
-        })
-        if (!deleteResult || deleteResult.affected === 0) {
-          throw new InternalServerErrorException("모임 가입 신청 취소에 실패했습니다.")
-        }
-        return {
-          message: "모임 가입 신청 취소에 성공했습니다."
-        }
+      return {
+        message: "모임 가입 신청 취소에 성공했습니다."
       }
-      if (memberExist.status === 'JOIN') {
-        const deleteResult = await this.clubMemberRepository.delete({
-          userId, clubId
-        })
-        if (!deleteResult || deleteResult.affected === 0) {
-          throw new InternalServerErrorException("모임 탈퇴에 실패했습니다.")
-        }
-        return {
-          message: "모임 탈퇴에 성공했습니다."
-        }
+    }
+    if (memberExist.status === 'JOIN') {
+      const deleteResult = await this.clubMemberRepository.delete({
+        userId, clubId
+      })
+      if (!deleteResult || deleteResult.affected === 0) {
+        throw new InternalServerErrorException("모임 탈퇴에 실패했습니다.")
       }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+      return {
+        message: "모임 탈퇴에 성공했습니다."
+      }
     }
   }
 
   async createSchedule(clubId: number, userId: number, createScheduleDto: CreateScheduleDto) {
-    try {
-      const clubExist = await this.entityLookupService.findOneOrThrow(
-        this.clubRepository,
-        { id: clubId },
-        "대상 모임이 존재하지 않습니다."
-      )
-      if (clubExist.leaderId !== userId) {
-        throw new ForbiddenException("모임장만 일정을 생성할 수 있습니다.")
-      }
-      const scheduleToCreate = this.clubScheduleRepository.create({
-        ...createScheduleDto,
-        clubId: clubExist.id
-      })
-      if (createScheduleDto.price) {
-        if (clubExist.type === 'FREE') {
-          throw new BadRequestException("유료 모임만 유료 일정을 생성할 수 있습니다.")
-        } else if (clubExist.type === 'PAID') {
-          const saved = await this.clubScheduleRepository.save(scheduleToCreate)
-          return {
-            message: "유료 일정을 생성했습니다.",
-            data: saved
-          }
+    const clubExist = await this.entityLookupService.findOneOrThrow(
+      this.clubRepository,
+      { id: clubId },
+      "대상 모임이 존재하지 않습니다."
+    )
+    if (clubExist.leaderId !== userId) {
+      throw new ForbiddenException("모임장만 일정을 생성할 수 있습니다.")
+    }
+    const scheduleToCreate = this.clubScheduleRepository.create({
+      ...createScheduleDto,
+      clubId: clubExist.id
+    })
+    if (createScheduleDto.price) {
+      if (clubExist.type === 'FREE') {
+        throw new BadRequestException("유료 모임만 유료 일정을 생성할 수 있습니다.")
+      } else if (clubExist.type === 'PAID') {
+        const saved = await this.clubScheduleRepository.save(scheduleToCreate)
+        return {
+          message: "유료 일정을 생성했습니다.",
+          data: saved
         }
       }
-      const saved = await this.clubScheduleRepository.save(scheduleToCreate)
-      return {
-        message: "클럽 일정이 생성되었습니다.",
-        data: saved
-      }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    }
+    const saved = await this.clubScheduleRepository.save(scheduleToCreate)
+    return {
+      message: "클럽 일정이 생성되었습니다.",
+      data: saved
     }
   }
 
+
   async getSchedules(clubId: number, userId: number) {
-    try {
-      const clubExist = await this.entityLookupService.findOneOrThrow(
-        this.clubRepository,
-        { id: clubId },
-        "대상 모임이 존재하지 않습니다."
-      )
-      const isMember = await this.clubMemberRepository.findOne({
-        where: { userId, clubId, status: 'JOIN' }
-      })
-      if (!isMember) {
-        throw new ForbiddenException("대상 모임의 멤버가 아닙니다.")
-      }
-      const schedulesToGet = await this.clubScheduleRepository.find({
-        select: ['id', 'title', 'content', 'place', 'price', 'maxAttendee', 'startDate', 'endDate'],
-        where: { clubId },
-      })
-      if (schedulesToGet.length === 0) {
-        return {
-          message: "대상 모임의 일정이 없습니다.",
-          data: []
-        }
-      }
+
+    const clubExist = await this.entityLookupService.findOneOrThrow(
+      this.clubRepository,
+      { id: clubId },
+      "대상 모임이 존재하지 않습니다."
+    )
+    const isMember = await this.clubMemberRepository.findOne({
+      where: { userId, clubId, status: 'JOIN' }
+    })
+    if (!isMember) {
+      throw new ForbiddenException("대상 모임의 멤버가 아닙니다.")
+    }
+    const schedulesToGet = await this.clubScheduleRepository.find({
+      select: ['id', 'title', 'content', 'place', 'price', 'maxAttendee', 'startDate', 'endDate'],
+      where: { clubId },
+    })
+    if (schedulesToGet.length === 0) {
       return {
-        message: "대상 모임의 일정을 전부 조회하였습니다.",
-        data: {
-          clubName: clubExist.clubName,
-          schedules: schedulesToGet
-        }
+        message: "대상 모임의 일정이 없습니다.",
+        data: []
       }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    }
+    return {
+      message: "대상 모임의 일정을 전부 조회하였습니다.",
+      data: {
+        clubName: clubExist.clubName,
+        schedules: schedulesToGet
+      }
     }
   }
 
