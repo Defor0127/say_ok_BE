@@ -108,7 +108,7 @@ export class ClubService {
       }
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (error instanceof ConflictException || error instanceof NotFoundException) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException("서버 에러가 발생했습니다.")
@@ -222,15 +222,9 @@ export class ClubService {
     const clubs = await this.clubRepository.find({
       where: { type: type }
     })
-    if (clubs.length === 0) {
-      return {
-        message: "대상 타입의 모임이 없습니다.",
-        data: []
-      }
-    }
     return {
-      message: "대상 타입의 모임을 조회하였습니다.",
-      data: clubs
+      data: clubs,
+      message: clubs.length === 0 ? "대상 타입의 모임이 없습니다." : "대상 타입의 모임을 전부 조회하였습니다."
     }
   }
 
@@ -368,34 +362,32 @@ export class ClubService {
   }
   //가입한 모임 조회
   async getClubsByMe(userId: number) {
-    try {
-      const targetUser = await this.entityLookupService.findOneOrThrow(
-        this.userRepository,
-        { id: userId },
-        "대상 유저가 존재하지 않습니다."
-      )
-      const clubIdsToGet = await this.clubMemberRepository.find({
-        select: ['clubId'],
-        where: { userId }
-      })
-      if (clubIdsToGet.length === 0) {
-        return {
-          message: "대상 유저가 가입한 모임이 없습니다.",
-          data: []
-        }
-      }
-      const clubIds = clubIdsToGet.map(({ clubId }) => clubId)
-      const clubsToGet = await this.clubRepository.find({
-        select: ['id', 'categoryId', 'clubName', 'introduction', 'joinMode'],
-        where: { id: In(clubIds) }
-      })
+
+    const targetUser = await this.entityLookupService.findOneOrThrow(
+      this.userRepository,
+      { id: userId },
+      "대상 유저가 존재하지 않습니다."
+    )
+    const clubIdsToGet = await this.clubMemberRepository.find({
+      select: ['clubId'],
+      where: { userId }
+    })
+    if (clubIdsToGet.length === 0) {
       return {
-        message: `${clubIdsToGet.length}개의 모임을 조회했습니다.`,
-        data: clubsToGet
+        message: "대상 유저가 가입한 모임이 없습니다.",
+        data: []
       }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
     }
+    const clubIds = clubIdsToGet.map(({ clubId }) => clubId)
+    const clubsToGet = await this.clubRepository.find({
+      select: ['id', 'categoryId', 'clubName', 'introduction', 'joinMode'],
+      where: { id: In(clubIds) }
+    })
+    return {
+      message: `${clubIdsToGet.length}개의 모임을 조회했습니다.`,
+      data: clubsToGet
+    }
+
   }
 
   async getOperatingClubsByMe(userId: number) {
@@ -425,40 +417,33 @@ export class ClubService {
     const queryRunner = this.datasource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       const clubRepo = queryRunner.manager.getRepository(Club);
       const clubMemberRepo = queryRunner.manager.getRepository(ClubMember);
       const clubBanMemberRepo = queryRunner.manager.getRepository(ClubBanMember);
-
       const clubExist = await clubRepo.findOne({
         where: { id: clubId },
         relations: ['leader']
       })
       if (!clubExist) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("대상 모임이 존재하지 않습니다.")
       }
       const memberExist = await clubMemberRepo.findOne({
         where: { userId: userId, clubId: clubId }
       })
       if (!memberExist) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("대상 멤버가 존재하지 않습니다.")
       }
       if (clubExist.leader.loginEmail !== loginEmail) {
-        await queryRunner.rollbackTransaction();
         throw new ForbiddenException("삭제 권한이 존재하지 않습니다.")
       }
       if (clubExist.leaderId === userId) {
-        await queryRunner.rollbackTransaction();
         throw new ForbiddenException("모임장 자신을 추방할 수 없습니다.")
       }
       const deleteResult = await clubMemberRepo.delete({
         userId: userId, clubId: clubId
       })
       if (!deleteResult || deleteResult.affected === 0) {
-        await queryRunner.rollbackTransaction();
         throw new InternalServerErrorException("멤버 추방에 실패했습니다.")
       }
       const banUser = clubBanMemberRepo.create({
@@ -472,7 +457,7 @@ export class ClubService {
       }
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (error instanceof ForbiddenException) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException("서버 에러가 발생했습니다.")
@@ -630,7 +615,6 @@ export class ClubService {
 
 
   async getSchedules(clubId: number, userId: number) {
-
     const clubExist = await this.entityLookupService.findOneOrThrow(
       this.clubRepository,
       { id: clubId },
@@ -665,13 +649,11 @@ export class ClubService {
     const queryRunner = this.datasource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       const clubRepo = queryRunner.manager.getRepository(Club);
       const clubScheduleRepo = queryRunner.manager.getRepository(ClubSchedule);
       const clubMemberRepo = queryRunner.manager.getRepository(ClubMember);
       const clubScheduleMemberRepo = queryRunner.manager.getRepository(ClubScheduleMember);
-
       const clubExist = await clubRepo.findOne({
         where: { id: clubId }
       })
@@ -780,84 +762,77 @@ export class ClubService {
     }
   }
 
-  async getAttendeesBySchedule(clubId: number, scheduleId: number, userId: number) {
-    try {
-      const attendees = await this.clubScheduleMemberRepository.find({
-        where: { scheduleId, status: 'ATTEND' }
-      })
-      if (attendees.length === 0) {
-        return {
-          message: "대상 스케줄에 참석한 멤버가 없습니다.",
-          data: []
-        }
-      }
-      const memberIds = attendees.map(({ memberId }) => memberId)
-      const membersDetail = await this.userRepository.find({
-        where: { id: In(memberIds) },
-        select: ['id', 'loginEmail', 'nickname']
-      })
+  async getAttendeesBySchedule(clubId: number, scheduleId: number) {
+    const clubExist = await this.entityLookupService.findOneOrThrow(
+      this.clubRepository,
+      { id: clubId },
+      "대상 모임이 존재하지 않습니다."
+    )
+    const attendees = await this.clubScheduleMemberRepository.find({
+      where: { scheduleId, status: 'ATTEND' }
+    })
+    if (attendees.length === 0) {
       return {
-        message: "참석 멤버의 정보를 반환합니다.",
-        data: membersDetail
+        message: "대상 스케줄에 참석한 멤버가 없습니다.",
+        data: []
       }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    }
+    const memberIds = attendees.map(({ memberId }) => memberId)
+    const membersDetail = await this.userRepository.find({
+      where: { id: In(memberIds) },
+      select: ['id', 'loginEmail', 'nickname']
+    })
+    return {
+      message: "참석 멤버의 정보를 반환합니다.",
+      data: membersDetail
     }
   }
 
   async getClubChatRoom(clubId: number, userId: number) {
-    try {
-      const clubExist = await this.entityLookupService.findOneOrThrow(
-        this.clubRepository,
-        { id: clubId },
-        "대상 모임이 존재하지 않습니다."
-      )
-      const isMember = await this.clubMemberRepository.findOne({
-        where: { clubId: clubId, userId: userId }
-      })
-      if (!isMember) {
-        throw new ForbiddenException("대상 모임의 멤버만 해당 모임 채팅방을 조회할 수 있습니다.")
-      }
-      const clubChatRoom = await this.clubChatRoomRepository.findOne({
-        where: { clubId: clubId }
-      })
-      return {
-        message: "대상 모임의 채팅방을 조회하였습니다.",
-        data: clubChatRoom
-      }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    const clubExist = await this.entityLookupService.findOneOrThrow(
+      this.clubRepository,
+      { id: clubId },
+      "대상 모임이 존재하지 않습니다."
+    )
+    const isMember = await this.clubMemberRepository.findOne({
+      where: { clubId: clubId, userId: userId }
+    })
+    if (!isMember) {
+      throw new ForbiddenException("대상 모임의 멤버만 해당 모임 채팅방을 조회할 수 있습니다.")
+    }
+    const clubChatRoom = await this.clubChatRoomRepository.findOne({
+      where: { clubId: clubId }
+    })
+    return {
+      message: "대상 모임의 채팅방을 조회하였습니다.",
+      data: clubChatRoom
     }
   }
 
   async getClubSchedulesByUser(userId: number) {
-    try {
-      const userExist = await this.entityLookupService.findOneOrThrow(
-        this.userRepository,
-        { id: userId },
-        "대상 유저가 존재하지 않습니다."
-      )
-      // 클럽 별로 참석한 일정 정리
-      const attendSchedules = await this.clubScheduleRepository.createQueryBuilder('clubSchedule')
-        .innerJoin('clubSchedule.attendees', 'attendee')
-        .select([
-          'clubSchedule.id',
-          'clubSchedule.startDate',
-          'clubSchedule.endDate',
-          'clubSchedule.place',
-          'clubSchedule.title',
-          'clubSchedule.content',
-          'clubSchedule.maxAttendee',
-          'attendee.memberId'
-        ])
-        .where('attendee.memberId = :userId', { userId })
-        .getMany()
-      return {
-        message: "대상 유저가 참석한 일정을 전부 조회하였습니다.",
-        data: attendSchedules
-      }
-    } catch (error) {
-      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    const userExist = await this.entityLookupService.findOneOrThrow(
+      this.userRepository,
+      { id: userId },
+      "대상 유저가 존재하지 않습니다."
+    )
+    // 클럽 별로 참석한 일정 정리
+    const attendSchedules = await this.clubScheduleRepository.createQueryBuilder('clubSchedule')
+      .innerJoin('clubSchedule.attendees', 'attendee')
+      .select([
+        'clubSchedule.id',
+        'clubSchedule.startDate',
+        'clubSchedule.endDate',
+        'clubSchedule.place',
+        'clubSchedule.title',
+        'clubSchedule.content',
+        'clubSchedule.maxAttendee',
+        'attendee.memberId'
+      ])
+      .where('attendee.memberId = :userId', { userId })
+      .getMany()
+    return {
+      message: "대상 유저가 참석한 일정을 전부 조회하였습니다.",
+      data: attendSchedules
     }
   }
 
@@ -865,12 +840,10 @@ export class ClubService {
     const queryRunner = this.datasource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       const clubMemberRepo = queryRunner.manager.getRepository(ClubMember);
       const clubChatRoomRepo = queryRunner.manager.getRepository(ClubChatRoom);
       const clubChatRoomMemberRepo = queryRunner.manager.getRepository(ClubChatRoomMember);
-
       const isSubscribed = await clubMemberRepo.findOne({
         where: { clubId, userId }
       })
@@ -900,7 +873,7 @@ export class ClubService {
       }
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (error instanceof ForbiddenException || error instanceof NotFoundException || error instanceof ConflictException) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException("서버 에러가 발생했습니다.")

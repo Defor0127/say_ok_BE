@@ -84,33 +84,23 @@ export class PointService {
       const userRepo = queryRunner.manager.getRepository(Users)
       const pointHistoryRepo = queryRunner.manager.getRepository(PointHistory)
       const pointPackageRepo = queryRunner.manager.getRepository(PointPackage)
-
-  
       const pointPackage = await pointPackageRepo.findOne({
         where: { id: chargePointByPackageDto.packageId }
       })
       if (!pointPackage) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("포인트 패키지를 찾을 수 없습니다.")
       }
-
-
       const user = await userRepo.findOne({
         where: { id: chargePointByPackageDto.userId }
       })
       if (!user) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("대상 유저가 존재하지 않습니다.")
       }
-
- 
       await userRepo.increment(
         { id: userId },
         'points',
         pointPackage.pointCharge
       )
-
-  
       const pointHistory = pointHistoryRepo.create({
         userId: chargePointByPackageDto.userId,
         paymentId: chargePointByPackageDto.paymentId,
@@ -118,7 +108,6 @@ export class PointService {
         charge: `패키지 충전: ${pointPackage.title} (${pointPackage.pointCharge}포인트)`
       })
       await pointHistoryRepo.save(pointHistory)
-
       await queryRunner.commitTransaction();
       const updatedUser = await userRepo.findOne({
         where: { id: chargePointByPackageDto.userId }
@@ -160,12 +149,9 @@ export class PointService {
         where: { id: usePointDto.userId }
       })
       if (!user) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("대상 유저가 존재하지 않습니다.")
       }
-
       if (user.points < usePointDto.amount) {
-        await queryRunner.rollbackTransaction();
         throw new InternalServerErrorException("보유 포인트가 부족합니다.")
       }
       await userRepo.decrement(

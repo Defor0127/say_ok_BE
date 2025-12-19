@@ -356,9 +356,8 @@ export class ClubController {
   async getAttendeesBySchedule(
     @Param('clubId') clubId: number,
     @Param('scheduleId') scheduleId: number,
-    @User('userId') userId: number
   ) {
-    return this.clubService.getAttendeesBySchedule(clubId, scheduleId, userId)
+    return this.clubService.getAttendeesBySchedule(clubId, scheduleId)
   }
 
   @Get('/:clubId/chat-room')

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ChargePointDto {
@@ -13,6 +13,7 @@ export class ChargePointDto {
   amount: number;
 
   @ApiProperty({ description: '결제 ID', example: 12345, required: false })
+  @IsOptional()
   @IsNumber()
   paymentId: number;
 
