@@ -9,6 +9,8 @@ import { UserReported } from '@/user/entities/user-reported.entity';
 import { PointHistory } from '@/point/entities/point-history.entity';
 import { ChatRoom } from '@/chat/entities/chatroom.entity';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
+import { ClubChatRoom } from '@/club/entities/club-chat-room.entity';
+import { ClubChatRoomMember } from '@/club/entities/club-chat-room-member.entity';
 
 @Injectable()
 export class AdminService {
@@ -27,6 +29,8 @@ export class AdminService {
     private readonly pointHistoryRepository: Repository<PointHistory>,
     @InjectRepository(ChatRoom)
     private readonly chatRoomRepository: Repository<ChatRoom>,
+    @InjectRepository(ClubChatRoom)
+    private readonly clubChatRoomRepository: Repository<ClubChatRoom>,
     private readonly entityLookupService: EntityLookupService
   ) { }
 
@@ -169,6 +173,10 @@ export class AdminService {
     if (!updateResult || updateResult.affected === 0) {
       throw new InternalServerErrorException("대상 모임의 상태 변경에 실패했습니다.")
     }
+    const clubChatRoomToCreate = await this.clubChatRoomRepository.create({
+      clubId
+    })
+    const savedClubChatRoom = await this.clubChatRoomRepository.save(clubChatRoomToCreate)
     return { message: "모임을 승인했습니다." }
   }
 

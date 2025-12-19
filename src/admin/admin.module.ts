@@ -10,6 +10,7 @@ import { SeniorContent } from '@/hub/entities/senior-content.entity';
 import { UserReported } from '@/user/entities/user-reported.entity';
 import { PointHistory } from '@/point/entities/point-history.entity';
 import { ChatRoom } from '@/chat/entities/chatroom.entity';
+import { ClubChatRoom } from '@/club/entities/club-chat-room.entity';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { ChatRoom } from '@/chat/entities/chatroom.entity';
       SeniorContent,
       UserReported,
       PointHistory,
-      ChatRoom
+      ChatRoom,
+      ClubChatRoom
     ])
   ],
   controllers: [AdminController],
