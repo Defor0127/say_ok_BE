@@ -516,22 +516,18 @@ export class ClubService {
         where: { id: clubId }
       })
       if (!clubExist) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("대상 모임이 존재하지 않습니다.")
       }
       if (clubExist.region !== region) {
-        await queryRunner.rollbackTransaction();
         throw new BadRequestException("다른 지역의 모임에 가입할 수 없습니다.")
       }
       const memberExist = await clubMemberRepo.findOne({
         where: { clubId, userId }
       })
       if (memberExist) {
-        await queryRunner.rollbackTransaction();
         throw new ConflictException("이미 대상 모임에 가입된 유저입니다.")
       }
       if (clubExist.status !== 'ACTIVE') {
-        await queryRunner.rollbackTransaction();
         throw new ForbiddenException("활성 상태의 모임이 아닙니다.")
       }
       if (clubExist.joinMode === 'AUTO') {
@@ -682,42 +678,36 @@ export class ClubService {
         where: { id: clubId }
       })
       if (!clubExist) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("대상 모임이 존재하지 않습니다.")
       }
       const scheduleExist = await clubScheduleRepo.findOne({
         where: { id: scheduleId }
       })
       if (!scheduleExist) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("대상 일정이 존재하지 않습니다.")
       }
       const isMatch = await clubScheduleRepo.findOne({
         where: { id: scheduleId, clubId: clubId }
       })
       if (!isMatch) {
-        await queryRunner.rollbackTransaction();
         throw new BadRequestException("대상 모임의 일정이 아닙니다.")
       }
       const isMember = await clubMemberRepo.findOne({
         where: { userId: userId, clubId, status: 'JOIN' }
       })
       if (!isMember) {
-        await queryRunner.rollbackTransaction();
         throw new ForbiddenException("대상 모임의 멤버가 아닙니다.")
       }
       const isExist = await clubScheduleMemberRepo.findOne({
         where: { id: scheduleId, memberId: userId }
       })
       if (isExist) {
-        await queryRunner.rollbackTransaction();
         throw new ConflictException("이미 참석한 일정입니다.")
       }
       const scheduleMembers = await clubScheduleMemberRepo.find({
         where: { id: scheduleId, status: 'ATTEND' }
       })
       if (scheduleMembers.length >= scheduleExist.maxAttendee) {
-        await queryRunner.rollbackTransaction();
         throw new BadRequestException("대상 일정의 최대 참가 인원을 초과하였습니다.")
       }
       const scheduleMemberToApply = clubScheduleMemberRepo.create({
@@ -887,21 +877,18 @@ export class ClubService {
         where: { clubId, userId }
       })
       if (!isSubscribed) {
-        await queryRunner.rollbackTransaction();
         throw new ForbiddenException("대상 모임의 멤버가 아니면 채팅방에 들어갈 수 없습니다.")
       }
       const clubChatRoomToJoin = await clubChatRoomRepo.findOne({
         where: { clubId }
       })
       if (!clubChatRoomToJoin) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("대상 모임의 채팅방이 존재하지 않습니다.")
       }
       const isConnected = await clubChatRoomMemberRepo.findOne({
         where: { roomId: clubChatRoomToJoin.id, userId }
       })
       if (isConnected) {
-        await queryRunner.rollbackTransaction();
         throw new ConflictException("이미 대상 채팅방에 접속중인 유저입니다.")
       }
       const joinChatRoom = clubChatRoomMemberRepo.create({
