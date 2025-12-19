@@ -27,7 +27,7 @@ export class CommentService {
       ...createCommentDto,
       userId
     })
-    // 답글일 경우
+    // 답글일 경우(parentCommentId가 있으면)
     if (createCommentDto.parentCommentId) {
       const parentComment = await this.commentRepository.findOne({
         where: { id: createCommentDto.parentCommentId }
