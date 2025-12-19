@@ -187,7 +187,7 @@ export class PostService {
   async updatePost(postId: number, updatePostDto: UpdatePostDto, userId: number) {
     try {
       const postToUpdate = await this.postRepository.findOne({
-        where: { id: postId, userId: userId  }
+        where: { id: postId, userId }
       })
       if (!postToUpdate) {
         throw new NotFoundException("대상 게시물이 존재하지 않습니다.")
@@ -206,7 +206,7 @@ export class PostService {
   async deletePost(postId: number, userId: number) {
     try {
       const postToDelete = await this.postRepository.findOne({
-        where: { id: postId, userId: userId }
+        where: { id: postId, userId }
       })
       if (!postToDelete || postToDelete.status !== 1) {
         throw new NotFoundException("대상 게시물이 없습니다.")
@@ -251,7 +251,7 @@ export class PostService {
     }
   }
 
-  async togglePostLike(postId: number, postLikeDto: PostLikeDto) {
+  async togglePostLike(postId: number, userId: number) {
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -269,7 +269,7 @@ export class PostService {
         }
       }
       const likeExist = await postLikeRepo.findOne({
-        where: { postId: postId, userId: postLikeDto.userId }
+        where: { postId, userId }
       })
       if (likeExist) {
         await queryRunner.manager.decrement(
@@ -280,7 +280,7 @@ export class PostService {
         )
         await queryRunner.manager.delete(
           PostLike,
-          { postId: postId, userId: postLikeDto.userId }
+          { postId, userId }
         )
         await queryRunner.commitTransaction()
         return {
@@ -294,7 +294,7 @@ export class PostService {
         1
       )
       const newLike = queryRunner.manager.create(PostLike, {
-        postId: postId, userId: postLikeDto.userId
+        postId: postId, userId
       })
       await postLikeRepo.save(newLike)
       await queryRunner.commitTransaction();
@@ -328,7 +328,7 @@ export class PostService {
     }
   }
 
-  async togglePostSave(postId: number, postSaveDto: PostSaveDto) {
+  async togglePostSave(postId: number, userId: number) {
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -343,12 +343,12 @@ export class PostService {
         throw new NotFoundException("대상 게시물이 없습니다.")
       }
       const saveExist = await postSaveRepo.findOne({
-        where: { postId: postId, userId: postSaveDto.userId }
+        where: { postId: postId, userId }
       })
       if (saveExist) {
         await queryRunner.manager.delete(
           PostSave,
-          { postId: postId, userId: postSaveDto.userId }
+          { postId: postId, userId}
         )
         await queryRunner.commitTransaction()
         return {
@@ -356,7 +356,7 @@ export class PostService {
         }
       }
       const newSave = await queryRunner.manager.create(PostSave, {
-        postId: postId, userId: postSaveDto.userId
+        postId: postId, userId
       })
       await postSaveRepo.save(newSave)
       await queryRunner.commitTransaction();

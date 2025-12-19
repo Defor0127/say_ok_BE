@@ -139,14 +139,13 @@ export class PostController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: '게시글 저장', description: '게시글을 저장하거나 저장 해제합니다.' })
   @ApiParam({ name: 'postId', description: '게시글 ID' })
-  @ApiBody({ type: PostSaveDto })
   @ApiResponse({ status: 200, description: '게시글 저장/저장 해제 성공' })
   @ApiResponse({ status: 404, description: '게시글을 찾을 수 없음' })
   async toggleSavePost(
     @Param('postId') postId: number,
-    @Body() postSaveDto: PostSaveDto
+    @User('userId') userId: number
   ) {
-    return this.postService.togglePostSave(postId, postSaveDto)
+    return this.postService.togglePostSave(postId, userId)
   }
 
   @Get('/:postId/comments')
@@ -165,14 +164,13 @@ export class PostController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: '게시글 좋아요', description: '게시글에 좋아요를 추가하거나 제거합니다.' })
   @ApiParam({ name: 'postId', description: '게시글 ID' })
-  @ApiBody({ type: PostLikeDto })
   @ApiResponse({ status: 200, description: '게시글 좋아요/좋아요 해제 성공' })
   @ApiResponse({ status: 404, description: '게시글을 찾을 수 없음' })
   async togglePostLike(
     @Param('postId') postId: number,
-    @Body() postLikeDto: PostLikeDto
+    @User('userId') userId: number
   ) {
-    return this.postService.togglePostLike(postId, postLikeDto)
+    return this.postService.togglePostLike(postId, userId)
   }
 }
 
