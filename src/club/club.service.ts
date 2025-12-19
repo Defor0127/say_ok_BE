@@ -534,7 +534,7 @@ export class ClubService {
       }
       if(clubExist.status !== 'ACTIVE' ){
         await queryRunner.rollbackTransaction();
-        throw new BadRequestException("활성 상태의 모임이 아닙니다.")
+        throw new ForbiddenException("활성 상태의 모임이 아닙니다.")
       }
       if (clubExist.joinMode === 'AUTO') {
         const memberToCreate = clubMemberRepo.create({
