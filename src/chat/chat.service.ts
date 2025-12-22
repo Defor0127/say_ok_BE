@@ -1,11 +1,13 @@
 import { Users } from '@/user/entities/user.entity';
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatRoomUser } from './entities/chatroom-user.entity';
 import { ChatRoom } from './entities/chatroom.entity';
-import { v4 as uuidv4 } from 'uuid';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
+import { ChatRoomMessage } from './entities/chatroom-message.enity';
+import { CreateMessageDto } from './dto/create-message.dto';
+import { UpdateMessageDto } from './dto/update-message.dto';
 
 @Injectable()
 export class ChatService {
@@ -16,6 +18,8 @@ export class ChatService {
     private readonly chatRoomUserRepository: Repository<ChatRoomUser>,
     @InjectRepository(ChatRoom)
     private readonly chatRoomRepository: Repository<ChatRoom>,
+    @InjectRepository(ChatRoomMessage)
+    private readonly chatRoomMessageRepository: Repository<ChatRoomMessage>,
     private readonly entityLookupService: EntityLookupService
   ) { }
 
@@ -93,5 +97,85 @@ export class ChatService {
       message: "채팅방 나가기에 성공했습니다."
     }
   }
+
+  async sendMessage(roomId: string, userId: number, createMessageDto: CreateMessageDto){
+    const roomExist = await this.entityLookupService.findOneOrThrow(
+      this.chatRoomRepository,
+      { id: roomId },
+      "대상 채팅방이 존재하지 않습니다."
+    )
+    const isEnter = await this.entityLookupService.findOneOrThrow(
+      this.chatRoomUserRepository,
+      { userId },
+      "대상 채팅방에 접속해있는 유저가 아닙니다."
+    )
+    const createMessage = this.chatRoomMessageRepository.create({...createMessageDto})
+    const saved = await this.chatRoomMessageRepository.save(createMessage);
+    return {
+      data: saved,
+      message: "메시지가 생성되었습니다."
+    }
+  }
+
+  async getMessages(userId: number, roomId: string){
+    const roomExist = await this.chatRoomRepository.findOne({
+      where: { id: roomId }
+    })
+    if(!roomExist) {
+      throw new NotFoundException("대상 채팅방을 찾을 수 없습니다.")
+    }
+    const isMember = await this.chatRoomUserRepository.findOne({
+      where : { userId, roomId }
+    })
+    if(!isMember){
+      throw new ForbiddenException("대상 채팅방의 멤버가 아닙니다.")
+    }
+    const messagesToGet = await this.chatRoomMessageRepository.findAndCount({
+      where:{ roomId },
+      order: { createdAt: 'DESC' }
+    })
+    const [ messages, total ] = messagesToGet
+    return {
+      data:messagesToGet,
+      message: "대상 메시지를 반환합니다."
+    }
+  }
+
+  //삭제 정책 자체는 까다롭게 생각할 것.
+  async deleteMessage(messageId){
+    const deleteResult = await this.chatRoomMessageRepository.update(
+      { id: messageId },
+      { status: 0}
+    )
+    if(!deleteResult) {
+      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    }
+    return {
+      message: "대상 메시지를 삭제했습니다.",
+      data: messageId
+    }
+  }
+
+  async updateMessage(messageId: string, updateMessageDto:UpdateMessageDto) {
+    const messageToUpdate = await this.chatRoomMessageRepository.findOne({
+      where: {id : messageId}
+    })
+    if(!messageToUpdate) {
+      throw new NotFoundException("대상 메시지를 찾을 수 없습니다.")
+    }
+    Object.assign(messageToUpdate,updateMessageDto)
+    const updated = await this.chatRoomMessageRepository.save(messageToUpdate)
+    return {
+      data: updated,
+      message: "대상 메시지 수정에 성공했습니다."
+    }
+  }
+
+  async refreshSession(){
+
+
+
+  }
+
 
 }

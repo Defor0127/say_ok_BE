@@ -613,7 +613,6 @@ export class ClubService {
     }
   }
 
-
   async getSchedules(clubId: number, userId: number) {
     const clubExist = await this.entityLookupService.findOneOrThrow(
       this.clubRepository,

@@ -32,14 +32,14 @@ export class PointService {
     try {
       const userRepo = queryRunner.manager.getRepository(Users)
       const pointHistoryRepo = queryRunner.manager.getRepository(PointHistory)
-
       const user = await userRepo.findOne({
-        where: { id: chargePointDto.userId }
+        where: { id: chargePointDto.userId },
+        lock: { mode: 'pessimistic_write' }
       })
       if (!user) {
-        await queryRunner.rollbackTransaction();
         throw new NotFoundException("대상 유저가 존재하지 않습니다.")
       }
+      const currentPoints = user.points;
       await userRepo.increment(
         { id: userId },
         'points',
@@ -51,16 +51,12 @@ export class PointService {
         changes: chargePointDto.amount,
         charge: chargePointDto.chargeReason
       })
-      await pointHistoryRepo.save(pointHistory)
-
-      await queryRunner.commitTransaction();
-      const updatedUser = await userRepo.findOne({
-        where: { id: chargePointDto.userId }
-      })
+      await pointHistoryRepo.save(pointHistory) 
+      await queryRunner.commitTransaction();  
       return {
         data: {
-          userId: updatedUser.id,
-          points: updatedUser.points
+          userId: user.id,
+          points: currentPoints + chargePointDto.amount
         },
         message: "포인트 충전에 성공했습니다."
       }
@@ -91,11 +87,13 @@ export class PointService {
         throw new NotFoundException("포인트 패키지를 찾을 수 없습니다.")
       }
       const user = await userRepo.findOne({
-        where: { id: chargePointByPackageDto.userId }
+        where: { id: chargePointByPackageDto.userId },
+        lock: { mode: 'pessimistic_write' }
       })
       if (!user) {
         throw new NotFoundException("대상 유저가 존재하지 않습니다.")
       }
+      const currentPoints = user.points;
       await userRepo.increment(
         { id: userId },
         'points',
@@ -109,14 +107,11 @@ export class PointService {
       })
       await pointHistoryRepo.save(pointHistory)
       await queryRunner.commitTransaction();
-      const updatedUser = await userRepo.findOne({
-        where: { id: chargePointByPackageDto.userId }
-      })
       return {
         data: {
-          userId: updatedUser.id,
-          points: updatedUser.points,
-          package: {
+          userId: user.id,
+          points: currentPoints + pointPackage.pointCharge,
+          package: {  
             id: pointPackage.id,
             title: pointPackage.title,
             pointCharge: pointPackage.pointCharge,
@@ -144,21 +139,24 @@ export class PointService {
     try {
       const userRepo = queryRunner.manager.getRepository(Users)
       const pointHistoryRepo = queryRunner.manager.getRepository(PointHistory)
-
       const user = await userRepo.findOne({
-        where: { id: usePointDto.userId }
+        where: { id: usePointDto.userId },
+        lock: { mode: 'pessimistic_write' }
       })
       if (!user) {
         throw new NotFoundException("대상 유저가 존재하지 않습니다.")
       }
-      if (user.points < usePointDto.amount) {
-        throw new InternalServerErrorException("보유 포인트가 부족합니다.")
+      const currentPoints = user.points;
+      const updateResult = await userRepo
+        .createQueryBuilder()
+        .update(Users)
+        .set({ points: () => `points - ${usePointDto.amount}` })
+        .where('id = :id', { id: userId })
+        .andWhere('points >= :amount', { amount: usePointDto.amount })
+        .execute();
+      if (!updateResult.affected) {
+        throw new BadRequestException("보유 포인트가 부족합니다.");
       }
-      await userRepo.decrement(
-        { id: userId },
-        'points',
-        usePointDto.amount
-      )
       const pointHistory = pointHistoryRepo.create({
         userId: usePointDto.userId,
         changes: -usePointDto.amount,
@@ -166,20 +164,16 @@ export class PointService {
       })
       await pointHistoryRepo.save(pointHistory)
       await queryRunner.commitTransaction();
-      const updatedUser = await userRepo.findOne({
-        where: { id: usePointDto.userId }
-      })
       return {
         data: {
-          userId: updatedUser.id,
-          points: updatedUser.points,
-          usedAmount: usePointDto.amount
+          userId: user.id,
+          points: currentPoints - usePointDto.amount,
         },
         message: "포인트 사용에 성공했습니다."
       }
     } catch (error) {
       await queryRunner.rollbackTransaction()
-      if (error instanceof NotFoundException || error instanceof InternalServerErrorException) throw error;
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException("서버 에러가 발생했습니다.")
     } finally {
       await queryRunner.release()
@@ -187,19 +181,18 @@ export class PointService {
   }
 
   async getPointHistories(userId: number, myId: number) {
-    if(userId !== myId ){
+    if (userId !== myId) {
       throw new ForbiddenException("내 포인트 사용이력만 조회할 수 있습니다.")
     }
     const historiesToGet = await this.pointHistoryRepository.createQueryBuilder('ph')
       .where('ph.userId = :userId', { userId })
-      .orderBy('ph.createdAt','DESC')
+      .orderBy('ph.createdAt', 'DESC')
       .getRawMany()
     return {
       data: historiesToGet,
-      message: historiesToGet.length === 0 ? "대상 유저의 포인트 사용기록이 없습니다.": "대상 유저의 포인트 사용 기록을 전부 조회하였습니다."
+      message: historiesToGet.length === 0 ? "대상 유저의 포인트 사용기록이 없습니다." : "대상 유저의 포인트 사용 기록을 전부 조회하였습니다."
     }
   }
-
 
   async getCurrentPoints(userId: number) {
     const user = await this.userRepository.findOne({

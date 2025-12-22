@@ -93,9 +93,7 @@ export class MatchService {
       const savedTicket = await matchTicketRepository.save(newTicket);
       // 매치 결과
       const matchResult = await this.tryMatchAndPersistLink(savedTicket.id, queryRunner);
-
       await queryRunner.commitTransaction();
-
       if (!matchResult.matched) {
         return {
           status: 'WAITING',
@@ -106,7 +104,6 @@ export class MatchService {
           message: '매칭 대기 중입니다.',
         };
       }
-
       return {
         status: 'MATCHED',
         ticketId: savedTicket.id,
@@ -135,32 +132,25 @@ export class MatchService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       const matchTicketRepository = queryRunner.manager.getRepository(MatchTicket);
-
       const ticket = await matchTicketRepository.findOne({ where: { id: ticketId } });
       if (!ticket) throw new NotFoundException('티켓이 존재하지 않습니다.');
       if (ticket.userId !== userId) throw new ForbiddenException('권한이 없습니다.');
-
       const now = new Date();
-
       // 만료 처리
       if (ticket.status === TicketStatus.WAITING && ticket.expiresAt <= now) {
         await this.expireTicketAndRefundIfNeeded(queryRunner, ticket.id);
         await queryRunner.commitTransaction();
-
         return {
           status: 'EXPIRED',
           ticketId: ticket.id,
           message: '매칭 대기 시간이 초과되었습니다.',
         };
       }
-
       //MATCHED면: 티켓에 저장된 roomId/matchSessionId를 그대로 반환 (정상 동작)
       if (ticket.status === TicketStatus.MATCHED) {
         await queryRunner.commitTransaction();
-
         return {
           status: 'MATCHED',
           ticketId: ticket.id,
@@ -169,9 +159,7 @@ export class MatchService {
           message: '매칭이 완료되었습니다.',
         };
       }
-
       await queryRunner.commitTransaction();
-
       return {
         status: ticket.status,
         ticketId: ticket.id,
@@ -185,7 +173,6 @@ export class MatchService {
       try {
         await queryRunner.rollbackTransaction();
       } catch { }
-
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('서버 에러가 발생했습니다.');
     } finally {
@@ -199,18 +186,14 @@ export class MatchService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       const matchTicketRepository = queryRunner.manager.getRepository(MatchTicket);
-
       const ticket = await matchTicketRepository.findOne({ where: { id: ticketId } });
       if (!ticket) throw new NotFoundException('티켓이 존재하지 않습니다.');
       if (ticket.userId !== userId) throw new ForbiddenException('권한이 없습니다.');
-
       if (ticket.status !== TicketStatus.WAITING) {
         throw new BadRequestException('대기중인 티켓만 취소할 수 있습니다.');
       }
-
       const cancelUpdateResult = await matchTicketRepository
         .createQueryBuilder()
         .update(MatchTicket)
@@ -218,20 +201,16 @@ export class MatchService {
         .where('id = :id', { id: ticketId })
         .andWhere('status = :waiting', { waiting: TicketStatus.WAITING })
         .execute();
-
       if (!cancelUpdateResult.affected) {
         throw new BadRequestException('티켓 취소에 실패했습니다.');
       }
-
       await this.refundIfNeeded(queryRunner, ticketId, 'CANCELED');
-
       await queryRunner.commitTransaction();
       return { message: '매칭 대기를 취소했습니다.' };
     } catch (error) {
       try {
         await queryRunner.rollbackTransaction();
       } catch { }
-
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('서버 에러가 발생했습니다.');
     } finally {
@@ -249,7 +228,7 @@ export class MatchService {
     try {
       const matchTicketRepository = queryRunner.manager.getRepository(MatchTicket);
       const now = new Date();
-
+      // waiting 상태인데, 만료시간 지난거. id만 limit만큼. 다가져와라.
       const targetTickets = await matchTicketRepository
         .createQueryBuilder('ticket')
         .where('ticket.status = :waiting', { waiting: TicketStatus.WAITING })
