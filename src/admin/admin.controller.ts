@@ -4,7 +4,6 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Role } from '@/user/enum/role.enum';
-import { UpdateHubContentDto } from '@/hub/dto/update-hub-content.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('관리자')
@@ -68,57 +67,6 @@ export class AdminController {
     return this.adminService.deleteUser(userId)
   }
 
-  @Get('/club')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: '모임 목록 조회', description: '전체 모임 목록을 조회합니다. (ADMIN만 접근 가능)' })
-  @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
-  @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
-  @ApiQuery({ name: 'categoryId', required: false, description: '카테고리 ID' })
-  @ApiQuery({ name: 'status', required: false, description: '모임 상태' })
-  @ApiResponse({ status: 200, description: '모임 목록 조회 성공' })
-  @ApiResponse({ status: 401, description: '권한 없음' })
-  async getAllClubs(
-    @Query('page') page: number,
-    @Query('limit') limit: number,
-    @Query('categoryId') categoryId: number,
-    @Query('status') status: string
-  ) {
-    return this.adminService.getAllClubs(page, limit, categoryId, status)
-  }
-
-  @Post('/club/approve/:clubId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: '모임 승인', description: '승인 대기 중인 모임을 승인합니다. (ADMIN만 접근 가능)' })
-  @ApiParam({ name: 'clubId', description: '모임 ID' })
-  @ApiResponse({ status: 200, description: '모임 승인 성공' })
-  @ApiResponse({ status: 401, description: '권한 없음' })
-  @ApiResponse({ status: 400, description: '승인 대기 상태의 모임만 승인 가능' })
-  @ApiResponse({ status: 404, description: '모임을 찾을 수 없음' })
-  async approveClub(
-    @Param('clubId') clubId: number
-  ) {
-    return this.adminService.approveClub(clubId)
-  }
-
-  @Post('/club/reject/:clubId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: '모임 승인 거부', description: '승인 대기 중인 모임의 승인을 거부합니다. (ADMIN만 접근 가능)' })
-  @ApiParam({ name: 'clubId', description: '모임 ID' })
-  @ApiResponse({ status: 200, description: '모임 승인 거부 성공' })
-  @ApiResponse({ status: 401, description: '권한 없음' })
-  @ApiResponse({ status: 404, description: '모임을 찾을 수 없음' })
-  async rejectClub(
-    @Param('clubId') clubId: number
-  ) {
-    return this.adminService.rejectClub(clubId)
-  }
-
   @Get('/report')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
@@ -145,37 +93,5 @@ export class AdminController {
     @Body() settingsDto: any
   ) {
     return this.adminService.updateSystemSettings(settingsDto)
-  }
-
-  @Patch('/hub/:contentId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: '허브 콘텐츠 수정', description: '허브 콘텐츠를 수정합니다. (ADMIN만 접근 가능)' })
-  @ApiParam({ name: 'contentId', description: '콘텐츠 ID' })
-  @ApiBody({ type: UpdateHubContentDto })
-  @ApiResponse({ status: 200, description: '콘텐츠 수정 성공' })
-  @ApiResponse({ status: 401, description: '권한 없음' })
-  @ApiResponse({ status: 404, description: '콘텐츠를 찾을 수 없음' })
-  async updateHubContent(
-    @Param('contentId') contentId: number,
-    @Body() updateHubContentDto: UpdateHubContentDto
-  ) {
-    return this.adminService.updateHubContent(contentId, updateHubContentDto)
-  }
-
-  @Delete('/hub/:contentId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: '허브 콘텐츠 삭제', description: '허브 콘텐츠를 삭제합니다. (ADMIN만 접근 가능)' })
-  @ApiParam({ name: 'contentId', description: '콘텐츠 ID' })
-  @ApiResponse({ status: 200, description: '콘텐츠 삭제 성공' })
-  @ApiResponse({ status: 401, description: '권한 없음' })
-  @ApiResponse({ status: 404, description: '콘텐츠를 찾을 수 없음' })
-  async deleteHubContent(
-    @Param('contentId') contentId: number
-  ) {
-    return this.adminService.deleteHubContent(contentId)
   }
 }

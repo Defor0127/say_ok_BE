@@ -41,7 +41,6 @@ export class UserController {
     return await this.userService.createUser(createUserDto)
   }
 
-
   @Get('/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')

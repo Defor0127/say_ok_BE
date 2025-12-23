@@ -17,7 +17,6 @@ export class LoginService {
   ) { }
 
   async login(loginDto: LoginDto) {
-
     const loggedInUser = await this.usersRepository.findOne({
       where: { loginEmail: loginDto.loginEmail }
     })

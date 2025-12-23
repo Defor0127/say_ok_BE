@@ -7,6 +7,7 @@ import { UserSuspension } from '@/user/entities/user-suspension.entity';
 import { ReportType } from './enums/report-type.enum';
 import { ReportUserDto } from './dto/report-user.dto';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
+import { ChatRoomMessage } from '@/chat/entities/chatroom-message.enity';
 
 @Injectable()
 export class ReportService {
@@ -20,7 +21,9 @@ export class ReportService {
     @InjectRepository(UserSuspension)
     private readonly userSuspensionRepository: Repository<UserSuspension>,
     private readonly entityLookupService: EntityLookupService,
-    private readonly dataSource: DataSource
+    private readonly dataSource: DataSource,
+    @InjectRepository(ChatRoomMessage)
+    private readonly chatRoomMessageRepository: Repository<ChatRoomMessage>
   ) { }
 
   async reportUser (userId: number, reportUserDto: ReportUserDto) {
@@ -37,6 +40,26 @@ export class ReportService {
       message: "대상 유저 신고에 성공했습니다."
     }
   }
+
+  async reportMessage (userId: number, messageId: string){
+    const userExist = await this.userRepository.findOne({
+      where : {id :userId}
+    })
+    if(!userExist){
+      throw new NotFoundException("대상 유저가 존재하지 않습니다.")
+    }
+    const messageExist = await this.chatRoomMessageRepository.findOne({
+      where: { id: messageId }
+    })
+    if(!messageExist) {
+      throw new NotFoundException("대상 메시지가 존재하지 않습니다.")
+    }
+    if(messageExist.senderId === userId) {
+      throw new ForbiddenException("자기자신을 신고 대상으로 할 수 없습니다.")
+    }
+
+  }
+
 
   async getReports(type: ReportType) {
     const reports = await this.userReportedRepository.find({
