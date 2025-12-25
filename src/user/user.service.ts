@@ -75,7 +75,6 @@ export class UserService {
         points
       }
     }
-
   }
 
   async getUserInfo(userId: number) {
