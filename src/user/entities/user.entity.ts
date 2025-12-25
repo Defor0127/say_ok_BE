@@ -1,15 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { Post } from '../../post/entities/post.entity';
-import { Comment } from '../../comment/entities/comment.entity';
-import { CommentLike } from '../../comment/entities/commentLike.entity';
-import { PostLike } from '../../post/entities/post-like.entity';
-import { Club } from '../../club/entities/club.entity';
-import { ClubMember } from '../../club/entities/club-member.entity';
-import { ClubBanMember } from '../../club/entities/club-ban-member.entity';
-import { SeniorContent } from '../../hub/entities/senior-content.entity';
-import { PointHistory } from '../../point/entities/point-history.entity';
+import { ChatAllowanceHistory } from '../../chat-allowance/entities/chat-allowance-history.entity';
 import { ChatRoomUser } from '../../chat/entities/chatroom-user.entity';
-import { PostSave } from '@/post/entities/post-saved.entity';
 import { UserSuspension } from './user-suspension.entity';
 
 @Entity('users')
@@ -84,41 +75,11 @@ export class Users {
   })
   updatedAt: Date;
 
-  @OneToMany(() => Post, (post) => post.user)
-  posts: Post[];
-
-  @OneToMany(() => PostSave, (postSave) => postSave.user)
-  postSaves: PostSave[];
-
-  @OneToMany(() => Comment, (comment) => comment.user)
-  comments: Comment[];
-
-  @OneToMany(() => CommentLike, (like) => like.user)
-  commentLikes: CommentLike[];
-
-  @OneToMany(() => PostLike, (like) => like.user)
-  postLikes: PostLike[];
-
-  @OneToMany(() => Club, (club) => club.leader)
-  leadingClubs: Club[];
-
-  @OneToMany(() => ClubMember, (member) => member.user)
-  clubMembers: ClubMember[];
-
-  @OneToMany(() => ClubBanMember, (ban) => ban.banUser)
-  clubBanned: ClubBanMember[];
-
-  @OneToMany(() => SeniorContent, (content) => content.admin)
-  seniorContents: SeniorContent[];
-
-  @OneToMany(() => PointHistory, (ph) => ph.user)
-  pointHistory: PointHistory[];
+  @OneToMany(() => ChatAllowanceHistory, (ph) => ph.user)
+  chatAllowanceHistory: ChatAllowanceHistory[];
 
   @OneToMany(() => ChatRoomUser, (cu) => cu.user)
   chatRooms: ChatRoomUser[];
-
-  @OneToMany(() => Club, (club) => club.user)
-  clubs: Club[];
 
   @OneToMany(() => UserSuspension, (suspension) => suspension.user)
   suspensions: UserSuspension[];
@@ -138,4 +99,6 @@ export class Users {
   @Column({ type: 'datetime', nullable: true })
   suspendedUntil: Date;
 
+  @Column({ type: 'int', default: 0 })
+  chatAllowance: number;
 }

@@ -6,7 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { ChatModule } from './chat/chat.module';
-import { PointModule } from './point/point.module';
+import { ChatAllowanceModule } from './chat-allowance/chat-allowance.module';
 import { AdminModule } from './admin/admin.module';
 import { SignupModule } from './signup/signup.module';
 import { LoginModule } from './login/login.module';
@@ -26,7 +26,7 @@ import { CommonModule } from './common/common.module';
     AuthModule,
     UserModule,
     ChatModule,
-    PointModule,
+    ChatAllowanceModule,
     AdminModule,
     SignupModule,
     LoginModule,

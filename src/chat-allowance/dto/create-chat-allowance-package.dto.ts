@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
-export class CreatePackageDto {
+export class CreateChatAllowancePackageDto {
   @ApiProperty({ description: '패키지 제목' })
   @IsNotEmpty()
   @IsString()

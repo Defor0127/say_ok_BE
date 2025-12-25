@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Users } from '@/user/entities/user.entity';
 import { UserReported } from '@/user/entities/user-reported.entity';
-import { PointHistory } from '@/point/entities/point-history.entity';
+import { ChatAllowanceHistory } from '@/chat-allowance/entities/chat-allowance-history.entity';
 import { ChatRoom } from '@/chat/entities/chatroom.entity';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
 
@@ -14,8 +14,8 @@ export class AdminService {
     private readonly userRepository: Repository<Users>,
     @InjectRepository(UserReported)
     private readonly userReportedRepository: Repository<UserReported>,
-    @InjectRepository(PointHistory)
-    private readonly pointHistoryRepository: Repository<PointHistory>,
+    @InjectRepository(ChatAllowanceHistory)
+    private readonly chatAllowanceHistoryRepository: Repository<ChatAllowanceHistory>,
     @InjectRepository(ChatRoom)
     private readonly chatRoomRepository: Repository<ChatRoom>,
     private readonly entityLookupService: EntityLookupService
@@ -120,17 +120,17 @@ export class AdminService {
       { id: userId },
       "대상 유저가 존재하지 않습니다."
     )
-    const pointHistories = await this.pointHistoryRepository.find({
+    const chatAllowanceHistories = await this.chatAllowanceHistoryRepository.find({
       where: { userId }
     })
-    if (pointHistories.length === 0) {
+    if (chatAllowanceHistories.length === 0) {
       return {
         message: "대상 유저의 포인트 사용 이력이 존재하지 않습니다.",
         data: []
       }
     }
     // 사용 총합, 충전 총합
-    const pointHistoriesSum = await this.pointHistoryRepository.createQueryBuilder('ph')
+    const chatAllowanceHistoriesSum = await this.chatAllowanceHistoryRepository.createQueryBuilder('ph')
       // if문이랑 같다고 생각하면 됨. ph.changes가 0보다 작으면 합침. 이걸 'used'로 반환.
       .select(`SUM(CASE WHEN ph.changes < 0 THEN ph.changes ELSE 0 END)`, 'used')
       // if문이랑 같다고 생각하면 됨. ph.changes가 0보다 크면 합침. 이걸 'charged'로 반환.
@@ -140,8 +140,8 @@ export class AdminService {
       .getRawOne()
     return {
       data: {
-        histories: pointHistories,
-        total: pointHistoriesSum
+        histories: chatAllowanceHistories,
+        total: chatAllowanceHistoriesSum
       },
       message: "대상 유저의 포인트 사용 이력을 조회합니다."
     }

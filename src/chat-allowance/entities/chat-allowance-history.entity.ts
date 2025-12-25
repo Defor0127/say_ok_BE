@@ -1,15 +1,15 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Users } from '../../user/entities/user.entity';
 
-@Entity('point_history')
-export class PointHistory {
+@Entity('chat_allowance_history')
+export class ChatAllowanceHistory {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
   userId: number;
 
-  @ManyToOne(() => Users, (user) => user.pointHistory, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Users, (user) => user.chatAllowanceHistory, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: Users;
 
@@ -28,3 +28,4 @@ export class PointHistory {
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 }
+

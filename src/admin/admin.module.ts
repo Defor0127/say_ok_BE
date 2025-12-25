@@ -4,7 +4,7 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { Users } from '@/user/entities/user.entity';
 import { UserReported } from '@/user/entities/user-reported.entity';
-import { PointHistory } from '@/point/entities/point-history.entity';
+import { ChatAllowanceHistory } from '@/chat-allowance/entities/chat-allowance-history.entity';
 import { ChatRoom } from '@/chat/entities/chatroom.entity';
 
 @Module({
@@ -12,7 +12,7 @@ import { ChatRoom } from '@/chat/entities/chatroom.entity';
     TypeOrmModule.forFeature([
       Users,
       UserReported,
-      PointHistory,
+      ChatAllowanceHistory,
       ChatRoom,
     ])
   ],

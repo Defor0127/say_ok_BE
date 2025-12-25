@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 
-@Entity('point_package')
-export class PointPackage {
+@Entity('chat_allowance_package')
+export class ChatAllowancePackage {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -12,8 +12,9 @@ export class PointPackage {
   description: string;
 
   @Column()
-  pointCharge : number;
+  allowanceCharge : number;
 
   @Column()
   requireCash : number;
 }
+

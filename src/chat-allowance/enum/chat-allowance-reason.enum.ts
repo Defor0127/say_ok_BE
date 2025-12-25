@@ -1,4 +1,5 @@
-export enum PointReason {
+export enum ChatAllowanceReason {
   USE = 'USE',
   PAYMENT = 'PAYMENT'
 }
+

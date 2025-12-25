@@ -1,13 +1,13 @@
 import { IsNotEmpty, IsNumber } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ChargePointByPackageDto {
+export class ChargeChatAllowanceByPackageDto {
   @ApiProperty({ description: '사용자 ID', example: 1 })
   @IsNotEmpty()
   @IsNumber()
   userId: number;
 
-  @ApiProperty({ description: '포인트 패키지 ID', example: 1 })
+  @ApiProperty({ description: '패키지 ID', example: 1 })
   @IsNotEmpty()
   @IsNumber()
   packageId: number;
