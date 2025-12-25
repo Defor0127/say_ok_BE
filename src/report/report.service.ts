@@ -69,11 +69,9 @@ export class ReportService {
     if (!report) {
       throw new NotFoundException("대상 신고가 존재하지 않습니다.")
     }
-
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       await queryRunner.manager.update(
         UserReported,
@@ -87,11 +85,9 @@ export class ReportService {
         'reportedCount',
         1
       );
-
       const updatedUser = await queryRunner.manager.findOne(Users, {
         where: { id: report.reportedUserId }
       });
-
       if (updatedUser && updatedUser.reportedCount >= this.SUSPENSION_THRESHOLD) {
         await this.suspendUser(
           queryRunner,
@@ -99,9 +95,7 @@ export class ReportService {
           updatedUser.reportedCount
         );
       }
-
       await queryRunner.commitTransaction();
-
       return { message: "신고를 처리했습니다." }
     } catch (error) {
       await queryRunner.rollbackTransaction();

@@ -51,8 +51,8 @@ export class PointService {
         changes: chargePointDto.amount,
         charge: chargePointDto.chargeReason
       })
-      await pointHistoryRepo.save(pointHistory) 
-      await queryRunner.commitTransaction();  
+      await pointHistoryRepo.save(pointHistory)
+      await queryRunner.commitTransaction();
       return {
         data: {
           userId: user.id,
@@ -111,7 +111,7 @@ export class PointService {
         data: {
           userId: user.id,
           points: currentPoints + pointPackage.pointCharge,
-          package: {  
+          package: {
             id: pointPackage.id,
             title: pointPackage.title,
             pointCharge: pointPackage.pointCharge,
