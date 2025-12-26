@@ -20,6 +20,9 @@ export class MatchTicket {
   @Column({})
   region: string;
 
+  @Column({ type: 'enum', enum: ['MAN', 'WOMAN'], nullable: true })
+  gender: 'MAN' | 'WOMAN';
+
   @Column({ type: 'enum', enum: ['FREE', 'ALLOWANCE'] })
   billingType: 'FREE' | 'ALLOWANCE'
 

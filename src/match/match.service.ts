@@ -74,6 +74,7 @@ export class MatchService {
       // 티켓에 유저의 지역정보, 받아온 billingType,cost 포함해서 생성. status는 WAITING으로.
       const newTicket = matchTicketRepository.create({
         userId,
+        gender:user.gender,
         region: user.region,
         status: TicketStatus.WAITING,
         createdAt: now,
@@ -113,7 +114,6 @@ export class MatchService {
       try {
         await queryRunner.rollbackTransaction();
       } catch { }
-
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('서버 에러가 발생했습니다.');
     } finally {
@@ -122,6 +122,7 @@ export class MatchService {
       } catch { }
     }
   }
+
   // 티켓 상태 확인(매칭됐는지)
   async getTicketStatus(userId: number, ticketId: string) {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -388,9 +389,9 @@ export class MatchService {
       .execute();
     // affected가 있고, 0보다 크면 billingType: points와 cost(300)반환
     if (paidAttemptUpdateResult.affected && paidAttemptUpdateResult.affected > 0) {
-      return { billingType: 'POINTS' as BillingType, cost: 1 }
+      return { billingType: 'ALLOWANCE' as BillingType, cost: 1 }
     }
-    throw new BadRequestException('무료 횟수가 소진되었고, 포인트도 부족합니다.');
+    throw new BadRequestException('무료 횟수가 소진되었고, 채팅권도 부족합니다.');
   }
 
   //티켓 만료 시 환불 필요하면 환불
@@ -434,7 +435,7 @@ export class MatchService {
 
     if (billingType === 'FREE') {
       shouldRefund = true;
-    } else if (billingType === 'ALLOWANCE' ){
+    } else if (billingType === 'ALLOWANCE') {
       shouldRefund = reason === 'EXPIRED';
     }
 
@@ -479,4 +480,69 @@ export class MatchService {
         .execute();
     }
   }
+
+  async startRandomChatByOppositeGender(userId: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const userRepository = queryRunner.manager.getRepository(Users);
+      const matchTicketRepository = queryRunner.manager.getRepository(MatchTicket);
+
+      //유저 확인
+      const user = await userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException('대상 유저가 존재하지 않습니다.');
+      }
+      //이미 대기 상태인 매칭 티켓이 있는지
+      const existingWaitingTicket = await matchTicketRepository.findOne({
+        where: { userId, status: TicketStatus.WAITING },
+      });
+      // 있으면 conflict exception
+      if (existingWaitingTicket) {
+        throw new ConflictException('이미 매칭중인 유저입니다.');
+      }
+
+
+
+
+    } catch {
+
+    } finally { }
+
+  }
+  // 만약 무료횟수가 다 차있으면 2회 차감, 1이면 각 1회씩 차감(), 0이면 횟수권에서 차감.
+  private async consumeRandomChatAllowanceByOppositeGender(queryRunner: QueryRunner, userId: number) {
+    const userRepository = queryRunner.manager.getRepository(Users);
+
+    //무료 2회가 차있을경우
+    const freeAttemptUpdateResult = await userRepository
+      .createQueryBuilder()
+      .update(Users)
+      .set({ dailyChatAllowance: () => 'dailyChatAllowance - 2' })
+      .where('id = :userId', { userId })
+      .andWhere('dailyChatAllowance = 2')
+      .execute();
+    if (freeAttemptUpdateResult.affected && freeAttemptUpdateResult.affected > 0) {
+      //무료 횟수에서 차감되는 것 반환
+      return { billingType: 'FREE' as BillingType, cost: 0 };
+    }
+
+    const paidAttemptUpdateResult = await userRepository
+      .createQueryBuilder()
+      .update(Users)
+      .set({ chatAllowance: () => `chatAllowance - 1` })
+      .where('id = :id', { id: userId })
+      .andWhere('chatAllowance >= :1')
+      .execute();
+    if (paidAttemptUpdateResult.affected && paidAttemptUpdateResult.affected > 0) {
+      return { billingType: 'ALLOWANCE' as BillingType, cost: 1 }
+    }
+
+
+
+
+
+  }
+
 }
