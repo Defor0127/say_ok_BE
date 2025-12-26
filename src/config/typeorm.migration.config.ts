@@ -20,7 +20,7 @@ const baseConfig: DataSourceOptions = {
   /**
    * 마이그레이션 생성 시에는 synchronize를 false로 유지
    */
-  synchronize: false,
+  synchronize: true,
 
   /**
    * 마이그레이션 생성 시 상세 로깅 활성화

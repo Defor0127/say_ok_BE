@@ -18,7 +18,7 @@ const baseConfig: DataSourceOptions = {
    * ⚠️ 운영에서는 절대 true 유지 X
    * 초기 1회 스키마 생성 후 반드시 false
    */
-  synchronize: false,
+  synchronize: true,
 
   /**
    * 운영 문제 파악용 (필요 없으면 줄여도 됨)

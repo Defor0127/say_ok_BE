@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { ChatRoomUser } from './entities/chatroom-user.entity';
 import { ChatRoom } from './entities/chatroom.entity';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
-import { ChatRoomMessage } from './entities/chatroom-message.enity';
+import { ChatRoomMessage } from './entities/chatroom-message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 
@@ -109,7 +109,7 @@ export class ChatService {
       { userId },
       "대상 채팅방에 접속해있는 유저가 아닙니다."
     )
-    const createMessage = this.chatRoomMessageRepository.create({...createMessageDto})
+    const createMessage = this.chatRoomMessageRepository.create({...createMessageDto, roomId})
     const saved = await this.chatRoomMessageRepository.save(createMessage);
     return {
       data: saved,
@@ -132,9 +132,10 @@ export class ChatService {
     }
     const messagesToGet = await this.chatRoomMessageRepository.findAndCount({
       where:{ roomId },
+      select:['content','senderId','createdAt'],
       order: { createdAt: 'DESC' }
     })
-    const [ messages, total ] = messagesToGet
+
     return {
       data:messagesToGet,
       message: "대상 메시지를 반환합니다."

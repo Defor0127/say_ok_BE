@@ -7,7 +7,7 @@ import { UserSuspension } from '@/user/entities/user-suspension.entity';
 import { ReportType } from './enums/report-type.enum';
 import { ReportUserDto } from './dto/report-user.dto';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
-import { ChatRoomMessage } from '@/chat/entities/chatroom-message.enity';
+import { ChatRoomMessage } from '@/chat/entities/chatroom-message.entity';
 import { ReportMessageDto } from './dto/report-message.dto';
 
 @Injectable()

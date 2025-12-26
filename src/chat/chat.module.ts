@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Users } from '@/user/entities/user.entity';
 import { ChatRoomUser } from './entities/chatroom-user.entity';
 import { ChatRoom } from './entities/chatroom.entity';
-import { ChatRoomMessage } from './entities/chatroom-message.enity';
+import { ChatRoomMessage } from './entities/chatroom-message.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Users,ChatRoomUser,ChatRoom,ChatRoomMessage])],
