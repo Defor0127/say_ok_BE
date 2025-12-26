@@ -47,7 +47,7 @@ export class ChatAllowanceService {
       const currentAllowance = user.chatAllowance
       await userRepo.increment(
         { id: userId },
-        'allowance',
+        'chatAllowance',
         chatAllowancePackage.allowanceCharge
       )
       const chatAllowanceHistory = chatAllowanceHistoryRepo.create({

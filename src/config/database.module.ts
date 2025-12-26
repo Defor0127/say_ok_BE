@@ -38,7 +38,7 @@ import { join } from 'path';
           migrations,
 
           // 운영 안전
-          synchronize: !isProd,
+          synchronize: false,
 
           // 타입 안전하게 배열로
           logging: isProd ? ['error'] : ['query', 'error', 'schema', 'warn'],
