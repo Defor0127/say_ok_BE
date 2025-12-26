@@ -9,5 +9,5 @@ import { Guide } from './entities/guide.entity';
   controllers: [GuideController],
   providers: [GuideService],
 })
-export class NoticeModule {}
+export class GuideModule {}
 

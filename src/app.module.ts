@@ -11,7 +11,7 @@ import { AdminModule } from './admin/admin.module';
 import { SignupModule } from './signup/signup.module';
 import { LoginModule } from './login/login.module';
 import { LogoutModule } from './logout/logout.module';
-import { NoticeModule } from './guide/guide.module';
+import { GuideModule } from './guide/guide.module';
 import { ReportModule } from './report/report.module';
 import { MatchModule } from './match/match.module';
 import { CommonModule } from './common/common.module';
@@ -31,7 +31,7 @@ import { CommonModule } from './common/common.module';
     SignupModule,
     LoginModule,
     LogoutModule,
-    NoticeModule,
+    GuideModule,
     ReportModule,
     MatchModule,
     CommonModule,
