@@ -31,6 +31,12 @@ export class ReportService {
     if(reportUserDto.reportedUserId === userId) {
       throw new ForbiddenException("자기 자신을 신고 대상으로 할 수 없습니다.")
     }
+    const userExist = await this.userRepository.findOne({
+      where : {id :userId}
+    })
+    if(!userExist){
+      throw new NotFoundException("대상 유저가 존재하지 않습니다.")
+    }
     const reportToCreate = this.userReportedRepository.create({
       ...reportUserDto,
       reporterId: userId
