@@ -430,7 +430,7 @@ export class MatchService {
       await this.refundIfNeeded(queryRunner, ticketId, 'EXPIRED');
     }
   }
-  //환불 필요하면 환불
+  //환불 필요하면 환불하는 함수
   private async refundIfNeeded(
     queryRunner: QueryRunner,
     ticketId: string,
@@ -453,23 +453,6 @@ export class MatchService {
 
     let shouldRefund = false;
 
-    if (billingType === 'FREE') {
-      shouldRefund = true;
-    } else if (billingType === 'ALLOWANCE') {
-      shouldRefund = reason === 'EXPIRED';
-    }
-
-    if (!shouldRefund) {
-      await matchTicketRepository
-        .createQueryBuilder()
-        .update(MatchTicket)
-        .set({ refunded: true })
-        .where('id = :id', { id: ticketId })
-        .andWhere('refunded = :f', { f: false })
-        .execute();
-      return;
-    }
-
     const markRefundedUpdateResult = await matchTicketRepository
       .createQueryBuilder()
       .update(MatchTicket)
@@ -485,7 +468,7 @@ export class MatchService {
       await userRepository
         .createQueryBuilder()
         .update(Users)
-        .set({ dailyChatAllowance: () => 'dailyChatAllowance + 1' })
+        .set({ dailyChatAllowance: () => 'dailyChatAllowance + 2' })
         .where('id = :id', { id: ticket.userId })
         .execute();
       return;
@@ -498,6 +481,7 @@ export class MatchService {
         .set({ chatAllowance: () => `chatAllowance + 1` })
         .where('id = :id', { id: ticket.userId })
         .execute();
+           return;
     }
     if (billingType === 'ALLOWANCE' && cost == 2) {
       await userRepository
@@ -506,6 +490,7 @@ export class MatchService {
         .set({ chatAllowance: () => `chatAllowance + 2` })
         .where('id = :id', { id: ticket.userId })
         .execute();
+           return;
     }
   }
   //반대성별매칭랜덤채팅
@@ -607,11 +592,10 @@ export class MatchService {
       .set({
         dailyChatAllowance: () => `dailyChatAllowance - 1`,
         chatAllowance: () => `chatAllowance - 1`
-
       })
       .where('id = :id', { id: userId })
       .andWhere('dailyChatAllowance  = 1')
-      .andWhere('chatAllowance >= :1')
+      .andWhere('chatAllowance >= 1')
       .execute();
     if (freeAndPaidAttemptUpdateResult.affected && freeAndPaidAttemptUpdateResult.affected > 0) {
       return { billingType: 'ALLOWANCE' as BillingType, cost: 1 }
@@ -619,12 +603,12 @@ export class MatchService {
     const paidAttemptUpdateResult = await userRepository
       .createQueryBuilder()
       .update(Users)
-      .set({ chatAllowance: () => `chatAllowance - 1` })
+      .set({ chatAllowance: () => `chatAllowance - 2` })
       .where('id = :id', { id: userId })
-      .andWhere('chatAllowance >= :1')
+      .andWhere('chatAllowance >= 2')
       .execute();
     if (paidAttemptUpdateResult.affected && paidAttemptUpdateResult.affected > 0) {
-      return { billingType: 'ALLOWANCE' as BillingType, cost: 1 }
+      return { billingType: 'ALLOWANCE' as BillingType, cost: 2 }
     }
     throw new BadRequestException('무료 횟수가 소진되었고, 채팅권도 부족합니다.');
   }

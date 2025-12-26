@@ -17,7 +17,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@ne
 export class MatchController {
   constructor(private readonly matchService: MatchService) {}
 
-  @Post('ticket')
+  @Post('random')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: '랜덤 채팅 시작', description: '랜덤 채팅 매칭을 시작합니다. 무료 횟수 또는 포인트를 사용합니다.' })
@@ -30,6 +30,21 @@ export class MatchController {
     @User('userId') userId: number
   ) {
     return this.matchService.startRandomChat(userId);
+  }
+
+  @Post('random-gender')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: '반대 성별 랜덤 채팅 시작', description: '반대 성별 랜덤 채팅 매칭을 시작합니다. 무료 횟수 또는 포인트를 사용합니다.' })
+  @ApiResponse({ status: 200, description: '매칭 시작 성공 (대기 중 또는 매칭 완료)' })
+  @ApiResponse({ status: 400, description: '무료 횟수 소진 및 포인트 부족' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  @ApiResponse({ status: 404, description: '유저를 찾을 수 없음' })
+  @ApiResponse({ status: 409, description: '이미 매칭 중인 유저' })
+  async startRandomChatByOppositeGender(
+    @User('userId') userId: number
+  ) {
+    return this.matchService.startRandomChatByOppositeGender(userId);
   }
 
   @Get('ticket/:ticketId')
@@ -48,7 +63,7 @@ export class MatchController {
     return this.matchService.getTicketStatus(userId, ticketId);
   }
 
-  @Delete('ticket/:ticketId')
+  @Post('ticket/:ticketId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: '티켓 취소', description: '매칭 대기 중인 티켓을 취소합니다. 사용한 포인트는 환불됩니다.' })

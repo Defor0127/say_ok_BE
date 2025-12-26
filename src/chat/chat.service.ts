@@ -130,12 +130,11 @@ export class ChatService {
     if(!isMember){
       throw new ForbiddenException("대상 채팅방의 멤버가 아닙니다.")
     }
-    const messagesToGet = await this.chatRoomMessageRepository.findAndCount({
+    const messagesToGet = await this.chatRoomMessageRepository.find({
       where:{ roomId },
       select:['content','senderId','createdAt'],
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     })
-
     return {
       data:messagesToGet,
       message: "대상 메시지를 반환합니다."
