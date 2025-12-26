@@ -382,13 +382,13 @@ export class MatchService {
     const paidAttemptUpdateResult = await userRepository
       .createQueryBuilder()
       .update(Users)
-      .set({ points: () => `points - ${cost}` })
+      .set({ chatAllowance: () => `chatAllowance - 1` })
       .where('id = :id', { id: userId })
-      .andWhere('points >= :cost', { cost })
+      .andWhere('chatAllowance >= :1')
       .execute();
     // affected가 있고, 0보다 크면 billingType: points와 cost(300)반환
     if (paidAttemptUpdateResult.affected && paidAttemptUpdateResult.affected > 0) {
-      return { billingType: 'POINTS' as BillingType, cost };
+      return { billingType: 'POINTS' as BillingType, cost: 1 }
     }
     throw new BadRequestException('무료 횟수가 소진되었고, 포인트도 부족합니다.');
   }
@@ -434,7 +434,7 @@ export class MatchService {
 
     if (billingType === 'FREE') {
       shouldRefund = true;
-    } else if (billingType === 'ALLOWANCE' {
+    } else if (billingType === 'ALLOWANCE' ){
       shouldRefund = reason === 'EXPIRED';
     }
 
@@ -464,17 +464,17 @@ export class MatchService {
       await userRepository
         .createQueryBuilder()
         .update(Users)
-        .set({ dailyChatAllowance: () => 'dailyChatCount + 1' })
+        .set({ dailyChatAllowance: () => 'dailyChatAllowance + 1' })
         .where('id = :id', { id: ticket.userId })
         .execute();
       return;
     }
     // point 환불일 경우
-    if (billingType === 'POINTS' && cost > 0) {
+    if (billingType === 'ALLOWANCE' && cost > 0) {
       await userRepository
         .createQueryBuilder()
         .update(Users)
-        .set({ points: () => `points + ${cost}` })
+        .set({ chatAllowance: () => `points + ${cost}` })
         .where('id = :id', { id: ticket.userId })
         .execute();
     }
