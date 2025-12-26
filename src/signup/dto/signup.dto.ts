@@ -23,10 +23,10 @@ export class SignUpDto {
   @IsString()
   nickname: string;
 
-  @ApiProperty({ description: '프로필 이미지 URL', example: 'https://example.com/image.jpg' })
+  @ApiProperty({description: '주민등록번호', example: '950127-1'})
   @IsNotEmpty()
   @IsString()
-  profileImageUrl: string;
+  registrationNumber: string;
 
   @ApiProperty({ description: '지역', example: '서울시 강남구' })
   @IsNotEmpty()

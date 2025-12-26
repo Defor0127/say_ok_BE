@@ -479,5 +479,4 @@ export class MatchService {
         .execute();
     }
   }
-
 }

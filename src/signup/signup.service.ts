@@ -1,5 +1,5 @@
 import { Users } from '@/user/entities/user.entity';
-import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import { SignUpDto } from './dto/signup.dto';
@@ -28,8 +28,20 @@ export class SignupService {
         throw new ConflictException("이미 사용중인 닉네임입니다.")
       }
       const hashedPassword = await bcrypt.hash(signUpDto.password, 10);
+      const isMan = ['1','3']
+      const isWoman = ['2','4']
+      let userGender;
+      const genderNumber = signUpDto.registrationNumber.slice(-1)
+      if(isMan.includes(genderNumber)){
+        userGender = 'MAN'
+      }else if(isWoman.includes(genderNumber)){
+        userGender = 'WOMAN'
+      }else {
+        throw new BadRequestException("잘못된 주민등록번호 형식입니다.")
+      }
       const userToCreate = await this.usersRepository.save({
         ...signUpDto,
+        gender: userGender,
         hashedPassword: hashedPassword
       })
       if(!userToCreate) {
