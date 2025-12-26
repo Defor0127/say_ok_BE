@@ -8,6 +8,7 @@ import { ReportType } from './enums/report-type.enum';
 import { ReportUserDto } from './dto/report-user.dto';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
 import { ChatRoomMessage } from '@/chat/entities/chatroom-message.enity';
+import { ReportMessageDto } from './dto/report-message.dto';
 
 @Injectable()
 export class ReportService {
@@ -41,7 +42,7 @@ export class ReportService {
     }
   }
 
-  async reportMessage (userId: number, messageId: string){
+  async reportMessage (userId: number, reportMessageDto:ReportMessageDto){
     const userExist = await this.userRepository.findOne({
       where : {id :userId}
     })
@@ -49,7 +50,8 @@ export class ReportService {
       throw new NotFoundException("대상 유저가 존재하지 않습니다.")
     }
     const messageExist = await this.chatRoomMessageRepository.findOne({
-      where: { id: messageId }
+      where: { id: reportMessageDto.messageId },
+      relations: ['sender']
     })
     if(!messageExist) {
       throw new NotFoundException("대상 메시지가 존재하지 않습니다.")
@@ -57,7 +59,13 @@ export class ReportService {
     if(messageExist.senderId === userId) {
       throw new ForbiddenException("자기자신을 신고 대상으로 할 수 없습니다.")
     }
-
+    const repostToCreate = await this.userReportedRepository.create({
+      ...reportMessageDto
+    })
+    const saved = await this.userReportedRepository.save(repostToCreate)
+    return {
+      message: "메시지 신고가 완료되었습니다"
+    }
   }
 
 

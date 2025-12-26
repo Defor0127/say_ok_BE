@@ -8,6 +8,7 @@ import { Role } from '@/user/enum/role.enum';
 import { ReportType } from './enums/report-type.enum';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { ReportUserDto } from './dto/report-user.dto';
+import { ReportMessageDto } from './dto/report-message.dto';
 
 @ApiTags('신고')
 @Controller('report')
@@ -26,6 +27,19 @@ export class ReportController {
     @Body() reportUserDto: ReportUserDto
   ) {
     return this.reportService.reportUser(userId, reportUserDto)
+  }
+
+  @Post('/message')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: '메시지 신고', description: '메시지를 신고합니다.' })
+  @ApiBody({ type: ReportMessageDto })
+  @ApiResponse({ status: 201, description: '메시지 신고 성공' })
+  async reportMessage(
+    @User('userId') userId: number,
+    @Body() reportMessageDto: ReportMessageDto
+  ) {
+    return this.reportService.reportMessage(userId, reportMessageDto)
   }
 
   @Get()
