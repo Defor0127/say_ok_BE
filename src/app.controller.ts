@@ -13,15 +13,5 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
-
-  @Get('health')
-  @ApiOperation({ summary: '헬스 체크', description: '서버 상태를 확인합니다.' })
-  @ApiResponse({ status: 200, description: '서버 정상 작동' })
-  getHealth() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-    };
-  }
 }
 
