@@ -171,11 +171,4 @@ export class ChatService {
     }
   }
 
-  async refreshSession(){
-
-
-
-  }
-
-
 }

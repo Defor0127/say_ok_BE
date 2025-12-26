@@ -44,7 +44,7 @@ export class ChatAllowanceService {
       if (!user) {
         throw new NotFoundException("대상 유저가 존재하지 않습니다.")
       }
-      const currentPoints = user.points;
+      const currentAllowance = user.chatAllowance
       await userRepo.increment(
         { id: userId },
         'allowance',
@@ -61,7 +61,7 @@ export class ChatAllowanceService {
       return {
         data: {
           userId: user.id,
-          points: currentPoints + chatAllowancePackage.allowanceCharge,
+          allowance: currentAllowance + chatAllowancePackage.allowanceCharge,
           package: {
             id: chatAllowancePackage.id,
             title: chatAllowancePackage.title,
@@ -105,7 +105,7 @@ export class ChatAllowanceService {
       data: {
         userId: user.id,
         allowance: user.chatAllowance
-      },  
+      },
       message: "현재 보유 채팅 허용권을 조회했습니다."
     }
   }
