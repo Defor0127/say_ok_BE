@@ -1,7 +1,6 @@
 import { IsNotEmpty, IsNumber, IsString } from "class-validator"
 
 export class CreateMessageDto {
-
   @IsNotEmpty()
   @IsNumber()
   senderId: number
@@ -9,6 +8,4 @@ export class CreateMessageDto {
   @IsNotEmpty()
   @IsString()
   content: string
-
-
 }
