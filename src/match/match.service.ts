@@ -400,7 +400,6 @@ export class MatchService {
       //무료 횟수에서 차감되는 것 반환
       return { billingType: 'FREE' as BillingType, cost: 0 };
     }
-
     const paidAttemptUpdateResult = await userRepository
       .createQueryBuilder()
       .update(Users)
