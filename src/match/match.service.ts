@@ -492,11 +492,19 @@ export class MatchService {
       return;
     }
     //allowance 환불일 경우
-    if (billingType === 'ALLOWANCE' && cost > 0) {
+    if (billingType === 'ALLOWANCE' && cost == 1) {
       await userRepository
         .createQueryBuilder()
         .update(Users)
         .set({ chatAllowance: () => `chatAllowance + 1` })
+        .where('id = :id', { id: ticket.userId })
+        .execute();
+    }
+    if (billingType === 'ALLOWANCE' && cost == 2) {
+      await userRepository
+        .createQueryBuilder()
+        .update(Users)
+        .set({ chatAllowance: () => `chatAllowance + 2` })
         .where('id = :id', { id: ticket.userId })
         .execute();
     }
