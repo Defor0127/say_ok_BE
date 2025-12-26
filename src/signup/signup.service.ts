@@ -1,6 +1,5 @@
 import { Users } from '@/user/entities/user.entity';
 import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import { SignUpDto } from './dto/signup.dto';
 import { InjectRepository } from '@nestjs/typeorm';
