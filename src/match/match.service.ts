@@ -407,7 +407,7 @@ export class MatchService {
       .where('id = :id', { id: userId })
       .andWhere('chatAllowance >= :1')
       .execute();
-    // affected가 있고, 0보다 크면 billingType: points와 cost(300)반환
+
     if (paidAttemptUpdateResult.affected && paidAttemptUpdateResult.affected > 0) {
       return { billingType: 'ALLOWANCE' as BillingType, cost: 1 }
     }
