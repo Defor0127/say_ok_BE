@@ -1,5 +1,5 @@
 {
-  "name": "sliverlink-backend",
+  "name": "say-ok-backend",
   "version": "1.0.0",
   "description": "SNS Service Backend with NestJS, MariaDB, and TypeORM",
   "author": "",
