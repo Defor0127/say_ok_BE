@@ -98,7 +98,7 @@ export class ChatService {
     }
   }
 
-  async sendMessage(roomId: string, userId: number, createMessageDto: CreateMessageDto){
+  async sendMessage(userId: number, roomId: string, createMessageDto: CreateMessageDto){
     const roomExist = await this.entityLookupService.findOneOrThrow(
       this.chatRoomRepository,
       { id: roomId },
