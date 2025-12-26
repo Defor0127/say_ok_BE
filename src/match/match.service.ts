@@ -23,7 +23,6 @@ type BillingType = 'FREE' | 'ALLOWANCE';
 @Injectable()
 export class MatchService {
   private readonly WAIT_SECONDS = 30;
-  private readonly POINT_COST_PER_TRY = 300;
 
   constructor(
     private readonly dataSource: DataSource,
@@ -342,7 +341,7 @@ export class MatchService {
       .execute();
     //둘 중 하나라도 실패했으면
     if (!myTicketUpdateResult.affected || !opponentTicketUpdateResult.affected) {
-      // 여기서 방/세션을 롤백해야 하나? -> 트랜잭션이라 커밋 전이면 자동 롤백됨.
+      //  트랜잭션이라 커밋 전이면 자동 롤백됨.
       return { matched: false as const };
     }
     // chatroom에 나 넣고
@@ -370,18 +369,16 @@ export class MatchService {
     const freeAttemptUpdateResult = await userRepository
       .createQueryBuilder()
       .update(Users)
-      .set({ dailyChatCount: () => 'dailyChatCount - 1' })
+      .set({ dailyChatAllowance: () => 'dailyChatAllowance - 1' })
       .where('id = :userId', { userId })
-      .andWhere('dailyChatCount > 0')
+      .andWhere('dailyChatAllowance > 0')
       .execute();
     // affected가 있고, 0보다 크면 billingType: FREE, cost 0 반환
     if (freeAttemptUpdateResult.affected && freeAttemptUpdateResult.affected > 0) {
       //무료 횟수에서 차감되는 것 반환
       return { billingType: 'FREE' as BillingType, cost: 0 };
     }
-    // cost = 하드코딩가격(300)
-    const cost = this.POINT_COST_PER_TRY;
-    // 결제 시도
+
     const paidAttemptUpdateResult = await userRepository
       .createQueryBuilder()
       .update(Users)
@@ -437,7 +434,7 @@ export class MatchService {
 
     if (billingType === 'FREE') {
       shouldRefund = true;
-    } else if (billingType === 'POINTS') {
+    } else if (billingType === 'ALLOWANCE' {
       shouldRefund = reason === 'EXPIRED';
     }
 
@@ -467,7 +464,7 @@ export class MatchService {
       await userRepository
         .createQueryBuilder()
         .update(Users)
-        .set({ dailyChatCount: () => 'dailyChatCount + 1' })
+        .set({ dailyChatAllowance: () => 'dailyChatCount + 1' })
         .where('id = :id', { id: ticket.userId })
         .execute();
       return;
@@ -482,53 +479,5 @@ export class MatchService {
         .execute();
     }
   }
-
-
-
-  private readonly HEARTBEAT_TIMEOUT_SEC = 15;
-  private readonly BILLING_UNIT_SEC = 60;
-  private readonly RATE_PER_UNIT = 10;
-  private readonly EARN_RATE = 0.3;
-  private readonly RINGING_TIMEOUT_SEC = 60;
-
-  private secondsBetween(a: Date, b: Date) {
-    return Math.max(0, Math.floor((b.getTime() - a.getTime()) / 1000));
-  }
-
-  private calcTotalCostWithUpfront(elapsedSec: number) {
-    const extraUnits = Math.floor(elapsedSec / this.BILLING_UNIT_SEC);
-    return (1 + extraUnits) * this.RATE_PER_UNIT;
-  }
-
-  private calcRemainingSecondsByPoints(points: number) {
-    const minutes = Math.floor(points / this.RATE_PER_UNIT);
-    return minutes * 60;
-  }
-
-  private async assertMatchSessionParticipant(
-    queryRunner: QueryRunner,
-    matchSessionId: string,
-    userId: number,
-  ) {
-    const matchSessionRepo = queryRunner.manager.getRepository(MatchSession);
-
-    const matchSession = await matchSessionRepo.findOne({
-      where: { id: matchSessionId },
-    });
-    if (!matchSession) throw new NotFoundException('매칭 세션이 존재하지 않습니다.');
-    if (matchSession.status !== SessionStatus.ACTIVE) {
-      throw new BadRequestException('활성화된 매칭 세션이 아닙니다.');
-    }
-
-    const isA = matchSession.userAId === userId;
-    const isB = matchSession.userBId === userId;
-    if (!isA && !isB) throw new ForbiddenException('해당 매칭 세션의 당사자가 아닙니다.');
-
-    const opponentUserId = isA ? matchSession.userBId : matchSession.userAId;
-
-    return { matchSession, opponentUserId };
-  }
-
-
 
 }

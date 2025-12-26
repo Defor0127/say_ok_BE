@@ -12,10 +12,10 @@ export class CreateChatAllowancePackageDto {
   @IsString()
   description: string;
 
-  @ApiProperty({ description: '충전 포인트' })
+  @ApiProperty({ description: '충전 채팅 권한' })
   @IsNotEmpty()
   @IsNumber()
-  pointCharge: number;
+  allowanceCharge: number;
 
   @ApiProperty({ description: '필요한 현금' })
   @IsNotEmpty()

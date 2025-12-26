@@ -20,8 +20,8 @@ export class MatchTicket {
   @Column({})
   region: string;
 
-  @Column({ type: 'enum', enum: ['FREE', 'POINTS'] })
-  billingType: 'FREE' | 'POINTS'
+  @Column({ type: 'enum', enum: ['FREE', 'ALLOWANCE'] })
+  billingType: 'FREE' | 'ALLOWANCE'
 
   @Column({ nullable: true })
   cost: number

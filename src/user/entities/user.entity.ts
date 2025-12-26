@@ -51,7 +51,7 @@ export class Users {
   })
   updatedAt: Date;
 
-  @OneToMany(() => ChatAllowanceHistory, (ph) => ph.user)
+  @OneToMany(() => ChatAllowanceHistory, (cah) => cah.user)
   chatAllowanceHistory: ChatAllowanceHistory[];
 
   @OneToMany(() => ChatRoomUser, (cu) => cu.user)
@@ -60,8 +60,8 @@ export class Users {
   @OneToMany(() => UserSuspension, (suspension) => suspension.user)
   suspensions: UserSuspension[];
 
-  @Column({ type: 'int', default: 3, nullable: true })
-  dailyChatCount: number;
+  @Column({ type: 'int', default: 2, nullable: true })
+  dailyChatAllowance: number;
 
   @Column({ type: 'int', default: 0 })
   reportedCount: number;

@@ -7,9 +7,6 @@ import { MatchSession } from './entities/match-session.entity';
 import { Users } from '@/user/entities/user.entity';
 import { ChatRoom } from '@/chat/entities/chatroom.entity';
 import { ChatRoomUser } from '@/chat/entities/chatroom-user.entity';
-import { CallSession } from './entities/call-session.entity';
-import { CallParticipant } from './entities/call-participant.entity';
-import { PointLedger } from './entities/point-ledger.entity';
 
 @Module({
   imports: [
@@ -19,9 +16,6 @@ import { PointLedger } from './entities/point-ledger.entity';
       MatchSession,
       ChatRoom,
       ChatRoomUser,
-      CallSession,
-      CallParticipant,
-      PointLedger
     ]),
   ],
   controllers: [MatchController],
