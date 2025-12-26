@@ -469,12 +469,12 @@ export class MatchService {
         .execute();
       return;
     }
-    // point 환불일 경우
+    //allowance 환불일 경우
     if (billingType === 'ALLOWANCE' && cost > 0) {
       await userRepository
         .createQueryBuilder()
         .update(Users)
-        .set({ chatAllowance: () => `points + ${cost}` })
+        .set({ chatAllowance: () => `chatAllowance + 1` })
         .where('id = :id', { id: ticket.userId })
         .execute();
     }
