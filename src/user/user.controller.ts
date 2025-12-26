@@ -9,6 +9,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 import { ChangeUserStatusItemDto } from './dto/change-user-status-item.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @ApiTags('사용자')
 @Controller('user')
@@ -123,6 +125,24 @@ export class UserController {
     @Param('userId') userId: number
   ) {
     return await this.userService.getUserInfo(userId)
+  }
+
+  @Patch('/me')
+  @UseGuards(JwtAuthGuard)
+  async updateUser(
+    @User('userId') userId: number,
+    @Body() updateUserDto: UpdateUserDto
+  ){
+    return await this.userService.updateUser(userId, updateUserDto)
+  }
+
+  @Patch('/me/password')
+  @UseGuards(JwtAuthGuard)
+  async updatePassword(
+    @User('userId') userId: number,
+    @Body() updatePasswordDto: UpdatePasswordDto
+  ) {
+    return await this.userService.updatePassword(userId,updatePasswordDto)
   }
 }
 
