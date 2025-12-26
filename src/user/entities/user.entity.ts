@@ -20,27 +20,6 @@ export class Users {
   @Column({ nullable: true })
   nickname: string;
 
-  @Column({ nullable: true })
-  profileImageUrl: string;
-
-  @Column({ nullable: true })
-  zipCode: string;
-
-  @Column({ nullable: true })
-  roadAddress: string;
-
-  @Column({ nullable: true })
-  detailAddress: string;
-
-  @Column({ type: 'decimal', precision: 8, scale: 6, nullable: true })
-  lat: number;
-
-  @Column({ type: 'decimal', precision: 9, scale: 6, nullable: true })
-  lng: number;
-
-  @Column({ nullable: true })
-  favoriteCategory: string;
-
   @Column({ type: 'varchar', length: 255, nullable: true })
   introduction: string;
 
@@ -58,9 +37,6 @@ export class Users {
 
   @Column({ default: 1 })
   status: number;
-
-  @Column({ default: 0 })
-  points: number;
 
   @Column({ nullable: true })
   refreshToken: string;
@@ -89,9 +65,6 @@ export class Users {
 
   @Column({ type: 'int', default: 0 })
   reportedCount: number;
-
-  @Column({ type: 'int', default: 0 })
-  escrowPoints: number;
 
   @Column({ type: 'boolean', default: false })
   isSuspended: boolean;

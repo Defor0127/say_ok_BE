@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/user.entity';
 import { In, Like, Repository } from 'typeorm';
@@ -7,6 +7,9 @@ import *as bcrypt from 'bcrypt'
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 import { ChangeUserStatusItemDto } from './dto/change-user-status-item.dto';
 import { EntityLookupService } from '@/common/services/entity-lookup.service';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
+
 
 @Injectable()
 export class UserService {
@@ -64,15 +67,14 @@ export class UserService {
       { id: userId },
       "해당 유저가 존재하지 않습니다."
     )
-    const { loginEmail, phoneNumber, gender, birthDate, points } = userExist
+    const { loginEmail, gender, birthDate, chatAllowance } = userExist
     return {
       message: "내 정보를 반환합니다.",
       data: {
         loginEmail,
-        phoneNumber,
         gender,
         birthDate,
-        points
+        chatAllowance
       }
     }
   }
@@ -134,5 +136,48 @@ export class UserService {
       message: "유저 상태 일괄 변경에 성공했습니다."
     }
   }
+
+  async updateUser(userId: number, updateUserDto: UpdateUserDto){
+    const userToUpdate = await this.userRepository.findOne({
+      where: { id: userId }
+    })
+    if(!userToUpdate){
+      throw new NotFoundException("대상 유저가 존재하지 않습니다.")
+    }
+    Object.assign(userToUpdate,updateUserDto);
+    const saved= await this.userRepository.save(userToUpdate)
+    return {
+      data: saved,
+      message: "유저 정보 수정에 성공하였습니다."
+    }
+  }
+
+  async updatePassword(userId: number, updatePasswordDto: UpdatePasswordDto ) {
+    const userExist = await this.userRepository.findOne({
+      where: {id: userId}
+    })
+    if(!userExist){
+      throw new NotFoundException("대상 유저가 존재하지 않습니다.")
+    }
+    const hashedPassword = await bcrypt.hash(updatePasswordDto.password, 10);
+    const isMatch = await this.userRepository.findOne({
+      where : { id:userId, hashedPassword }
+    })
+    if(!isMatch){
+      throw new ForbiddenException("비밀번호가 일치하지 않습니다.")
+    }
+    const newPassword = await bcrypt.hash(updatePasswordDto.newPassword,10);
+    const updated = await this.userRepository.update(
+      {id:userId},{ hashedPassword: newPassword}
+    )
+    if(!updated.affected){
+      throw new InternalServerErrorException("서버 에러가 발생했습니다.")
+    }
+    return {
+      message:"비밀번호 수정에 성공했습니다."
+    }
+  }
+
+
 }
 
