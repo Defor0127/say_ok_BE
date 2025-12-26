@@ -275,42 +275,42 @@ export class MatchService {
     }
     let opponentTicket;
 
-    if(myTicket.gender == null){
-     opponentTicket = await matchTicketRepository
-      .createQueryBuilder('ticket')
-      //비관적 락.
-      .setLock('pessimistic_write')
-      // status가 waiting이고.
-      .where('ticket.status = :status', { status: TicketStatus.WAITING })
-      // region이 같은 region이고.
-      .andWhere('ticket.region = :region', { region: myTicket.region })
-      // ticket 유저id가 내 티켓 userId와 다르고.
-      .andWhere('ticket.userId != :me', { me: myTicket.userId })
-      // 만료되지 않았고.
-      .andWhere('ticket.expiresAt > :now', { now })
-      // 오래된순
-      .orderBy('ticket.createdAt', 'ASC')
-      //하나만
-      .getOne();
+    if (myTicket.gender == null) {
+      opponentTicket = await matchTicketRepository
+        .createQueryBuilder('ticket')
+        //비관적 락.
+        .setLock('pessimistic_write')
+        // status가 waiting이고.
+        .where('ticket.status = :status', { status: TicketStatus.WAITING })
+        // region이 같은 region이고.
+        .andWhere('ticket.region = :region', { region: myTicket.region })
+        // ticket 유저id가 내 티켓 userId와 다르고.
+        .andWhere('ticket.userId != :me', { me: myTicket.userId })
+        // 만료되지 않았고.
+        .andWhere('ticket.expiresAt > :now', { now })
+        // 오래된순
+        .orderBy('ticket.createdAt', 'ASC')
+        //하나만
+        .getOne();
       // 상대가 없으면 실패
-    }else{
-     opponentTicket = await matchTicketRepository
-      .createQueryBuilder('ticket')
-      //비관적 락.
-      .setLock('pessimistic_write')
-      // status가 waiting이고.
-      .where('ticket.status = :status', { status: TicketStatus.WAITING })
-      // region이 같은 region이고.
-      .andWhere('ticket.region = :region', { region: myTicket.region })
-      .andWhere('ticket.gender != :gender', { gender: myTicket.gender })
-      // ticket 유저id가 내 티켓 userId와 다르고.
-      .andWhere('ticket.userId != :me', { me: myTicket.userId })
-      // 만료되지 않았고.
-      .andWhere('ticket.expiresAt > :now', { now })
-      // 오래된순
-      .orderBy('ticket.createdAt', 'ASC')
-      //하나만
-      .getOne();
+    } else {
+      opponentTicket = await matchTicketRepository
+        .createQueryBuilder('ticket')
+        //비관적 락.
+        .setLock('pessimistic_write')
+        // status가 waiting이고.
+        .where('ticket.status = :status', { status: TicketStatus.WAITING })
+        // region이 같은 region이고.
+        .andWhere('ticket.region = :region', { region: myTicket.region })
+        .andWhere('ticket.gender != :gender', { gender: myTicket.gender })
+        // ticket 유저id가 내 티켓 userId와 다르고.
+        .andWhere('ticket.userId != :me', { me: myTicket.userId })
+        // 만료되지 않았고.
+        .andWhere('ticket.expiresAt > :now', { now })
+        // 오래된순
+        .orderBy('ticket.createdAt', 'ASC')
+        //하나만
+        .getOne();
     }
     if (!opponentTicket) {
       return { matched: false as const };
@@ -573,10 +573,17 @@ export class MatchService {
         message: '매칭이 완료되었습니다.',
       };
 
-    } catch {
-
-    } finally { }
-
+    } catch (error) {
+      try {
+        await queryRunner.rollbackTransaction();
+      } catch { }
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('서버 에러가 발생했습니다.');
+    } finally {
+      try {
+        await queryRunner.release();
+      } catch { }
+    }
   }
   // 만약 무료횟수가 다 차있으면 2회 차감, 1이면 각 1회씩 차감(), 0이면 횟수권에서 차감.
   private async consumeRandomChatAllowanceByOppositeGender(queryRunner: QueryRunner, userId: number) {
