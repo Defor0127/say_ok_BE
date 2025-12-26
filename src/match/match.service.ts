@@ -405,7 +405,7 @@ export class MatchService {
       .update(Users)
       .set({ chatAllowance: () => `chatAllowance - 1` })
       .where('id = :id', { id: userId })
-      .andWhere('chatAllowance >= :1')
+      .andWhere('chatAllowance >= 1')
       .execute();
 
     if (paidAttemptUpdateResult.affected && paidAttemptUpdateResult.affected > 0) {
